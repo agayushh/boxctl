@@ -9,7 +9,8 @@
     "lint": "oxlint src",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "stats": "STATS_MODE=all vitest run scripts/campaign-stats.test.ts --disable-console-intercept"
   },
   "dependencies": {
     "framer-motion": "^13.4.0",
