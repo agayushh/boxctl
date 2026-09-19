@@ -3,7 +3,6 @@ import { Header } from "@/components/layout/Header";
 import { Landing } from "@/components/landing/Landing";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Lab } from "@/components/lab/Lab";
-import { Compare } from "@/components/lab/Compare";
 import { LevelEditor } from "@/components/editor/LevelEditor";
 import { useUrlState } from "@/hooks/useUrlState";
 import { LEVELS, levelById } from "@/levels";
@@ -35,15 +34,21 @@ export default function App() {
     }
   };
 
+  const headerView =
+    state.view === "lab" && state.mode === "compare" ? "compare" : state.view;
+
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-void text-text">
       {state.view !== "landing" && (
         <Header
-          view={state.view}
-          explain={state.explain}
+          view={headerView}
           cinema={state.view === "cinema"}
-          onView={(view) => patch({ view })}
-          onExplain={(explain) => patch({ explain })}
+          onView={(view) => {
+            if (view === "compare") patch({ view: "lab", mode: "compare" });
+            else if (view === "lab") patch({ view: "lab", mode: "play" });
+            else if (view === "cinema") patch({ view: "cinema", mode: "watch" });
+            else patch({ view });
+          }}
           onShare={share}
         />
       )}
@@ -55,37 +60,30 @@ export default function App() {
       {state.view === "landing" ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <Landing
-            onExplore={() => patch({ view: "lab" })}
+            onExplore={() => patch({ view: "lab", mode: "play" })}
             onHow={() => patch({ view: "how" })}
           />
         </div>
       ) : state.view === "how" ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <HowItWorks onBack={() => patch({ view: "lab" })} />
+          <HowItWorks onBack={() => patch({ view: "lab", mode: "play" })} />
         </div>
       ) : state.view === "editor" ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <LevelEditor
-            onSolve={(puzzle) => patch({ view: "lab", puzzle, level: "custom" })}
+            onSolve={(puzzle) => patch({ view: "lab", puzzle, level: "custom", mode: "play" })}
           />
         </div>
-      ) : state.view === "compare" ? (
-        <Compare
-          ascii={ascii}
-          left={state.algo}
-          right={state.vs}
-          onLeft={(algo) => patch({ algo })}
-          onRight={(vs) => patch({ vs })}
-        />
       ) : (
         <Lab
           levelId={state.level}
-          ascii={ascii}
+          ascii={state.puzzle ? ascii : undefined}
           algorithm={state.algo}
-          explain={state.explain}
+          mode={state.view === "cinema" ? "watch" : state.mode}
           cinema={state.view === "cinema"}
           onAlgorithm={(algo) => patch({ algo })}
           onLevel={(level) => patch({ level: level.id, puzzle: null })}
+          onMode={(mode) => patch({ view: "lab", mode })}
         />
       )}
     </div>

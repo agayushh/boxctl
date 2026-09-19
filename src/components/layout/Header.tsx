@@ -2,21 +2,19 @@ import type { ViewId } from "@/hooks/useUrlState";
 
 type Props = {
   view: ViewId;
-  explain: boolean;
   onView: (view: ViewId) => void;
-  onExplain: (value: boolean) => void;
   onShare: () => void;
   cinema?: boolean;
 };
 
 const LINKS: Array<{ id: ViewId; label: string }> = [
-  { id: "lab", label: "Lab" },
+  { id: "lab", label: "Play" },
   { id: "compare", label: "Compare" },
   { id: "editor", label: "Editor" },
   { id: "how", label: "How it works" },
 ];
 
-export function Header({ view, explain, onView, onExplain, onShare, cinema }: Props) {
+export function Header({ view, onView, onShare, cinema }: Props) {
   if (cinema) {
     return (
       <header className="flex items-center justify-between px-4 py-3">
@@ -57,26 +55,6 @@ export function Header({ view, explain, onView, onExplain, onShare, cinema }: Pr
         ))}
       </nav>
       <div className="ml-auto flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-xs text-mute">
-          <span>Explain mode</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={explain}
-            onClick={() => onExplain(!explain)}
-            className={[
-              "relative h-5 w-9 rounded-full border",
-              explain ? "border-gold bg-gold/20" : "border-line bg-raised",
-            ].join(" ")}
-          >
-            <span
-              className={[
-                "absolute top-0.5 h-4 w-4 rounded-full transition-transform",
-                explain ? "left-4 bg-gold" : "left-0.5 bg-mute",
-              ].join(" ")}
-            />
-          </button>
-        </label>
         <button
           type="button"
           onClick={() => onView("cinema")}

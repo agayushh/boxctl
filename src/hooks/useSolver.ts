@@ -12,6 +12,7 @@ export function useSolver(
   state: SokobanState | null,
   algorithm: AlgorithmId,
   puzzleKey: string,
+  enabled = true,
 ) {
   const [result, setResult] = useState<SolverResult | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -35,7 +36,13 @@ export function useSolver(
   }, []);
 
   useEffect(() => {
-    if (!board || !state || !puzzleKey) return;
+    if (!enabled || !board || !state || !puzzleKey) {
+      if (!enabled) {
+        setStatus("idle");
+        setResult(null);
+      }
+      return;
+    }
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
     setStatus("running");
@@ -80,7 +87,7 @@ export function useSolver(
 
     fail("No worker available.");
     return undefined;
-  }, [algorithm, puzzleKey, board, state]);
+  }, [algorithm, puzzleKey, board, state, enabled]);
 
   return { result, status, error };
 }

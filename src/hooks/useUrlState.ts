@@ -4,6 +4,8 @@ import { decodePuzzle, encodePuzzle } from "@/utils/encodePuzzle";
 
 export type ViewId = "landing" | "lab" | "how" | "editor" | "compare" | "cinema";
 
+export type PlayMode = "play" | "watch" | "compare";
+
 export type UrlState = {
   view: ViewId;
   level: string;
@@ -11,6 +13,7 @@ export type UrlState = {
   vs: AlgorithmId;
   explain: boolean;
   puzzle: string | null;
+  mode: PlayMode;
 };
 
 const ALGOS: AlgorithmId[] = ["astar", "bfs", "greedy", "idastar", "beam"];
@@ -27,15 +30,21 @@ function parseView(value: string | null, mode: string | null): ViewId {
   return "landing";
 }
 
+function parseMode(value: string | null): PlayMode {
+  if (value === "watch" || value === "compare" || value === "play") return value;
+  return "play";
+}
+
 export function readUrl(): UrlState {
   const params = new URLSearchParams(window.location.search);
   return {
     view: parseView(params.get("view"), params.get("mode")),
-    level: params.get("level") ?? "tutorial",
+    level: params.get("level") ?? "1",
     algo: parseAlgo(params.get("algo"), "astar"),
     vs: parseAlgo(params.get("vs"), "bfs"),
     explain: params.get("explain") !== "0",
     puzzle: params.get("puzzle") ? decodePuzzle(params.get("puzzle")!) : null,
+    mode: parseMode(params.get("play")),
   };
 }
 
@@ -43,9 +52,10 @@ export function writeUrl(state: UrlState): void {
   const params = new URLSearchParams();
   if (state.view !== "landing") params.set("view", state.view);
   if (state.view === "cinema") params.set("mode", "cinema");
-  if (state.level !== "tutorial") params.set("level", state.level);
+  if (state.level !== "1") params.set("level", state.level);
   if (state.algo !== "astar") params.set("algo", state.algo);
   if (state.view === "compare" && state.vs !== "bfs") params.set("vs", state.vs);
+  if (state.mode !== "play" && state.view !== "cinema") params.set("play", state.mode);
   if (!state.explain) params.set("explain", "0");
   if (state.puzzle) params.set("puzzle", encodePuzzle(state.puzzle));
   const qs = params.toString();
@@ -53,18 +63,19 @@ export function writeUrl(state: UrlState): void {
   window.history.replaceState(null, "", url);
 }
 
+const FALLBACK: UrlState = {
+  view: "landing",
+  level: "1",
+  algo: "astar",
+  vs: "bfs",
+  explain: true,
+  puzzle: null,
+  mode: "play",
+};
+
 export function useUrlState() {
   const [state, setState] = useState<UrlState>(() =>
-    typeof window === "undefined"
-      ? {
-          view: "landing",
-          level: "tutorial",
-          algo: "astar",
-          vs: "bfs",
-          explain: true,
-          puzzle: null,
-        }
-      : readUrl(),
+    typeof window === "undefined" ? FALLBACK : readUrl(),
   );
 
   useEffect(() => {

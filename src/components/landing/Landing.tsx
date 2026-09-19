@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { parseLevel } from "@/engine/sokoban/parser";
 import { Board } from "@/components/sokoban/Board";
-import { SearchGraph } from "@/components/search/SearchGraph";
 import { useSolver } from "@/hooks/useSolver";
-import { usePlayback } from "@/hooks/usePlayback";
+import { useSolutionPlayback } from "@/hooks/useSolutionPlayback";
 import { LEVELS } from "@/levels";
 
 type Props = {
@@ -13,13 +12,8 @@ type Props = {
 
 export function Landing({ onExplore, onHow }: Props) {
   const parsed = useMemo(() => parseLevel(LEVELS[0]!.ascii), []);
-  const { result } = useSolver(parsed.board, parsed.state, "astar", "landing-tutorial");
-  const playback = usePlayback(result, true);
-  const current = playback.frame.currentId
-    ? playback.frame.nodes.get(playback.frame.currentId)
-    : undefined;
-  const boardState = current?.state ?? parsed.state;
-  const solutionIds = playback.frame.solution?.pathIds ?? [];
+  const { result, status } = useSolver(parsed.board, parsed.state, "astar", "landing-l1");
+  const playback = useSolutionPlayback(parsed.state, result, true);
 
   return (
     <div className="grid min-h-svh grid-rows-[auto_1fr] bg-void">
@@ -30,7 +24,7 @@ export function Landing({ onExplore, onHow }: Props) {
             Watch an AI solve Sokoban.
           </h1>
           <p className="mt-4 max-w-md text-base leading-relaxed text-mute">
-            Explore search, heuristics, deadlocks, and planning — one move at a time.
+            Play all 60 Maths Is Fun levels, then watch the solver replay its route on the same board.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button
@@ -38,7 +32,7 @@ export function Landing({ onExplore, onHow }: Props) {
               onClick={onExplore}
               className="rounded-full bg-text px-5 py-2.5 text-sm text-void"
             >
-              Explore
+              Play 60 levels
             </button>
             <button
               type="button"
@@ -50,19 +44,20 @@ export function Landing({ onExplore, onHow }: Props) {
           </div>
         </div>
         <p className="max-w-sm text-sm text-faint">
-          Left: the puzzle a person sees. Right: every push the algorithm considers.
+          {status === "running"
+            ? "Finding a route for level 1…"
+            : result?.solution
+              ? `Level 1 · ${result.solution.pushes.length} pushes`
+              : "Level 1 of 60"}
         </p>
       </div>
-      <div className="mx-auto grid w-full max-w-6xl gap-8 px-5 pb-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:px-8">
-        <div className="flex items-center justify-center rounded-2xl border border-line bg-canvas p-6">
-          <Board board={parsed.board} state={boardState} maxSize={360} />
-        </div>
-        <div className="min-h-[280px] rounded-2xl border border-line bg-canvas p-4">
-          <SearchGraph
-            nodes={[...playback.frame.nodes.values()]}
-            currentId={playback.frame.currentId}
-            solutionIds={solutionIds}
-            onSelect={() => undefined}
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-center px-5 pb-16 lg:px-8">
+        <div className="w-full rounded-2xl border border-line bg-canvas p-6">
+          <Board
+            board={parsed.board}
+            state={playback.state}
+            maxSize={420}
+            highlight={playback.highlight}
           />
         </div>
       </div>
