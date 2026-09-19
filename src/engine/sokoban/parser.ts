@@ -7,7 +7,7 @@ const TILE: Record<string, string> = {
   "#": "wall",
   " ": "floor",
   "-": "floor",
-  "_": "floor",
+  _: "void",
   ".": "goal",
   "@": "player",
   "+": "player-on-goal",
@@ -43,8 +43,8 @@ export function parseLevel(ascii: string): ParsedLevel {
       if (!kind) {
         throw new Error(`Unknown tile '${ch}' at ${x},${y}.`);
       }
-      if (kind === "wall") {
-        walls.add(cell);
+      if (kind === "wall" || kind === "void") {
+        if (kind === "wall") walls.add(cell);
         continue;
       }
       floors.add(cell);
@@ -70,7 +70,13 @@ export function parseLevel(ascii: string): ParsedLevel {
 }
 
 export function stringifyLevel(
-  board: { width: number; height: number; walls: ReadonlySet<number>; goals: ReadonlySet<number> },
+  board: {
+    width: number;
+    height: number;
+    walls: ReadonlySet<number>;
+    goals: ReadonlySet<number>;
+    floors?: ReadonlySet<number>;
+  },
   state: { player: number; boxes: ReadonlySet<number> },
 ): string {
   const rows: string[] = [];
@@ -82,7 +88,9 @@ export function stringifyLevel(
       if (board.walls.has(cell)) row += "#";
       else if (state.player === cell) row += onGoal ? "+" : "@";
       else if (state.boxes.has(cell)) row += onGoal ? "*" : "$";
-      else row += onGoal ? "." : " ";
+      else if (onGoal) row += ".";
+      else if (board.floors && !board.floors.has(cell)) row += "_";
+      else row += " ";
     }
     rows.push(row);
   }

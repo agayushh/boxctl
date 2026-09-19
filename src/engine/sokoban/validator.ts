@@ -12,7 +12,7 @@ function flood(start: number, board: Board, extraBlocked?: ReadonlySet<number>):
       const next = stepPacked(current, action);
       if (seen.has(next)) continue;
       if (!inBoundsPacked(next, board.width, board.height)) continue;
-      if (board.walls.has(next)) continue;
+      if (board.walls.has(next) || !board.floors.has(next)) continue;
       if (extraBlocked?.has(next)) continue;
       seen.add(next);
       queue.push(next);

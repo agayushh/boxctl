@@ -6,7 +6,7 @@ import { greedy } from "@/engine/search/greedy";
 import { idastar } from "@/engine/search/idastar";
 import { beam } from "@/engine/search/beam";
 
-export const DEFAULT_MAX_NODES = 40_000;
+export const DEFAULT_MAX_NODES = 50_000;
 export const DEFAULT_BEAM_WIDTH = 24;
 
 export function solve(request: SolverRequest): SolverResult {

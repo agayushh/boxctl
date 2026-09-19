@@ -9,7 +9,8 @@ export type CellKind =
   | "player"
   | "box"
   | "box-on-goal"
-  | "player-on-goal";
+  | "player-on-goal"
+  | "void";
 
 export type Board = {
   readonly width: number;

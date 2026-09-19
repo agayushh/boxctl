@@ -63,6 +63,25 @@ export function matchingDistance(
   const n = Math.max(boxes.length, goals.length);
   if (n === 0) return { value: 0, pairs: [] };
 
+  if (n > 8) {
+    const pairs: HeuristicBreakdown["pairs"] = [];
+    let value = 0;
+    for (const box of boxes) {
+      let best = INF;
+      let bestGoal = goals[0] ?? box;
+      for (const goal of goals) {
+        const dist = manhattanPacked(box, goal);
+        if (dist < best) {
+          best = dist;
+          bestGoal = goal;
+        }
+      }
+      value += best;
+      pairs.push({ box, goal: bestGoal, dist: best });
+    }
+    return { value, pairs };
+  }
+
   const cost: number[][] = [];
   for (let i = 0; i < n; i += 1) {
     const row: number[] = [];

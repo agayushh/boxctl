@@ -23,7 +23,11 @@ function CellInner({ kind, size, x, y, highlight }: Props) {
       <div
         className={[
           "absolute inset-[1px]",
-          isWall ? "bg-[#1a1a20] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" : "bg-[#121216]",
+          isWall
+            ? "bg-[#1a1a20] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            : kind === "void"
+              ? "bg-transparent"
+              : "bg-[#121216]",
           highlight ? "ring-1 ring-gold/50" : "",
         ].join(" ")}
         style={{ borderRadius: isWall ? 3 : 2 }}

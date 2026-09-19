@@ -65,7 +65,9 @@ export function Board({ board, state, maxSize = 520, highlight = [], compact, on
               ? "wall"
               : board.goals.has(cell)
                 ? "goal"
-                : "floor";
+                : board.floors.has(cell)
+                  ? "floor"
+                  : "void";
             return onCellClick ? (
               <button
                 key={cell}

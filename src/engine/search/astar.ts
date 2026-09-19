@@ -33,8 +33,10 @@ export function astar(
   open.push(root);
   const bestG = new Map<string, number>([[root.id, 0]]);
   recorder.noteFrontier(open.size);
+  let visits = 0;
 
   while (open.size > 0) {
+    if (++visits > maxNodes * 40) break;
     const node = open.pop()!;
     const known = bestG.get(node.id);
     if (known !== undefined && node.g > known) continue;

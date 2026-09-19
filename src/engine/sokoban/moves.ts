@@ -13,23 +13,27 @@ import type {
 } from "@/engine/sokoban/types";
 import { isSolved } from "@/engine/sokoban/goals";
 
+function isWalkable(board: Board, cell: number): boolean {
+  return (
+    inBoundsPacked(cell, board.width, board.height) &&
+    board.floors.has(cell) &&
+    !board.walls.has(cell)
+  );
+}
+
 export function tryMove(
   state: SokobanState,
   board: Board,
   action: Action,
 ): MoveResult {
   const dest = stepPacked(state.player, action);
-  if (!inBoundsPacked(dest, board.width, board.height) || board.walls.has(dest)) {
+  if (!isWalkable(board, dest)) {
     return { valid: false, action, reason: "Blocked by a wall." };
   }
 
   if (state.boxes.has(dest)) {
     const beyond = stepPacked(dest, action);
-    if (
-      !inBoundsPacked(beyond, board.width, board.height) ||
-      board.walls.has(beyond) ||
-      state.boxes.has(beyond)
-    ) {
+    if (!isWalkable(board, beyond) || state.boxes.has(beyond)) {
       return {
         valid: false,
         action,
@@ -67,8 +71,7 @@ export function reachablePlayerCells(
     for (const action of ACTIONS) {
       const next = stepPacked(current, action);
       if (reached.has(next)) continue;
-      if (!inBoundsPacked(next, board.width, board.height)) continue;
-      if (board.walls.has(next) || state.boxes.has(next)) continue;
+      if (!isWalkable(board, next) || state.boxes.has(next)) continue;
       reached.add(next);
       queue.push(next);
     }
@@ -92,8 +95,7 @@ export function playerWalkLength(
     for (const action of ACTIONS) {
       const next = stepPacked(current, action);
       if (dist.has(next)) continue;
-      if (!inBoundsPacked(next, board.width, board.height)) continue;
-      if (board.walls.has(next) || state.boxes.has(next)) continue;
+      if (!isWalkable(board, next) || state.boxes.has(next)) continue;
       if (next === target) return currentDist + 1;
       dist.set(next, currentDist + 1);
       queue.push(next);
@@ -107,27 +109,37 @@ export function generatePushes(
   state: SokobanState,
   board: Board,
 ): PushSuccessor[] {
-  const reach = reachablePlayerCells(state, board);
-  const successors: PushSuccessor[] = [];
+  const dist = new Map<number, number>([[state.player, 0]]);
+  const queue = [state.player];
+  for (let i = 0; i < queue.length; i += 1) {
+    const current = queue[i]!;
+    const currentDist = dist.get(current)!;
+    for (const action of ACTIONS) {
+      const next = stepPacked(current, action);
+      if (dist.has(next)) continue;
+      if (!isWalkable(board, next) || state.boxes.has(next)) continue;
+      dist.set(next, currentDist + 1);
+      queue.push(next);
+    }
+  }
 
+  const successors: PushSuccessor[] = [];
   for (const box of state.boxes) {
     for (const action of ACTIONS) {
       const dest = stepPacked(box, action);
       const stand = stepPacked(box, oppositeAction(action));
-      if (!reach.has(stand)) continue;
-      if (!inBoundsPacked(dest, board.width, board.height)) continue;
-      if (board.walls.has(dest) || state.boxes.has(dest)) continue;
+      if (!dist.has(stand)) continue;
+      if (!isWalkable(board, dest) || state.boxes.has(dest)) continue;
 
       const boxes = new Set(state.boxes);
       boxes.delete(box);
       boxes.add(dest);
-      const walks = playerWalkLength({ ...state, player: state.player }, board, stand);
       successors.push({
         state: { player: box, boxes },
         action,
         pushedFrom: box,
         pushedTo: dest,
-        playerWalks: Number.isFinite(walks) ? walks : 0,
+        playerWalks: dist.get(stand) ?? 0,
       });
     }
   }
@@ -221,8 +233,7 @@ function walkActions(
     for (const action of ACTIONS) {
       const next = stepPacked(current, action);
       if (seen.has(next)) continue;
-      if (!inBoundsPacked(next, board.width, board.height)) continue;
-      if (board.walls.has(next) || state.boxes.has(next)) continue;
+      if (!isWalkable(board, next) || state.boxes.has(next)) continue;
       parent.set(next, { from: current, action });
       if (next === target) {
         const path: Action[] = [];
