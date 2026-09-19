@@ -16,10 +16,11 @@ export type UrlState = {
   mode: PlayMode;
 };
 
-const ALGOS: AlgorithmId[] = ["astar", "bfs", "greedy", "idastar", "beam"];
+const VISUAL: AlgorithmId[] = ["astar", "bfs", "greedy"];
 
 function parseAlgo(value: string | null, fallback: AlgorithmId): AlgorithmId {
-  return ALGOS.includes(value as AlgorithmId) ? (value as AlgorithmId) : fallback;
+  if (value && VISUAL.includes(value as AlgorithmId)) return value as AlgorithmId;
+  return fallback;
 }
 
 function parseView(value: string | null, mode: string | null): ViewId {

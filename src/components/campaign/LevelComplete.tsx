@@ -5,6 +5,7 @@ type Props = {
   aiPushes?: number;
   onNext: () => void;
   onWatch: () => void;
+  onCompare?: () => void;
   onClose: () => void;
 };
 
@@ -15,6 +16,7 @@ export function LevelComplete({
   aiPushes,
   onNext,
   onWatch,
+  onCompare,
   onClose,
 }: Props) {
   return (
@@ -43,6 +45,11 @@ export function LevelComplete({
           <button type="button" onClick={onWatch} className="rounded-full border border-line px-4 py-2 text-sm">
             Watch AI Solve
           </button>
+          {onCompare && (
+            <button type="button" onClick={onCompare} className="rounded-full border border-line px-4 py-2 text-sm">
+              Compare routes
+            </button>
+          )}
           <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm text-mute">
             Keep playing
           </button>

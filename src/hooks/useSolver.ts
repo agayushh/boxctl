@@ -7,12 +7,17 @@ import type { WorkerIn, WorkerOut } from "@/engine/search/serialize";
 
 type Status = "idle" | "running" | "done" | "error";
 
+type Options = {
+  instant?: boolean;
+};
+
 export function useSolver(
   board: Board | null,
   state: SokobanState | null,
   algorithm: AlgorithmId,
   puzzleKey: string,
   enabled = true,
+  options: Options = {},
 ) {
   const [result, setResult] = useState<SolverResult | null>(null);
   const [progress, setProgress] = useState<SearchProgress | null>(null);
@@ -84,6 +89,7 @@ export function useSolver(
       const payload: WorkerIn = {
         requestId,
         algorithm,
+        mode: options.instant ? "instant" : "visualization",
         board: serializeBoard(board),
         state: serializeState(state),
       };
@@ -96,7 +102,7 @@ export function useSolver(
 
     fail("No worker available.");
     return undefined;
-  }, [algorithm, puzzleKey, board, state, enabled]);
+  }, [algorithm, puzzleKey, board, state, enabled, options.instant]);
 
   return { result, status, error, progress };
 }

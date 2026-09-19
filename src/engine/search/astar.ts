@@ -23,8 +23,9 @@ export function astar(
   heuristic: Heuristic,
   maxNodes: number,
   onProgress?: (progress: SearchProgress) => void,
+  maxEvents = 12_000,
 ): SolverResult {
-  const recorder = new SearchRecorder("astar", heuristic.name);
+  const recorder = new SearchRecorder("astar", heuristic.name, maxEvents);
   const t0 = performance.now();
   const root = makeNode(recorder, { state: start, board, heuristic, g: 0 });
   recorder.discovered(root);

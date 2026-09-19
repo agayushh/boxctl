@@ -33,13 +33,13 @@ export function PlaybackControls({
         <IconButton label={playing ? "Pause" : "Play"} onClick={onToggle}>
           {playing ? "Pause" : "Play"}
         </IconButton>
-        <IconButton label="Previous step" onClick={onPrev}>
+        <IconButton label="Previous push" onClick={onPrev}>
           Prev
         </IconButton>
-        <IconButton label="Next search step" onClick={onNext}>
+        <IconButton label="Next push" onClick={onNext}>
           Next
         </IconButton>
-        <IconButton label="Restart search playback" onClick={onRestart}>
+        <IconButton label="Restart route" onClick={onRestart}>
           Restart
         </IconButton>
         <div className="ml-auto flex flex-wrap gap-1">
@@ -73,7 +73,7 @@ export function PlaybackControls({
           value={Math.min(cursor, max)}
           onChange={(event) => onSeek(Number(event.target.value))}
           className="w-full accent-gold"
-          aria-label="Search event timeline"
+          aria-label="Solution timeline"
         />
       </label>
     </div>

@@ -1,31 +1,27 @@
 const STEPS = [
   {
-    title: "This looks like a simple puzzle.",
-    body: "A person sees walls, a player, boxes, and goals. The question is only: which way do I push?",
+    title: "The board is just one picture of the puzzle.",
+    body: "Walls, a person, boxes, goals. A human asks: which way do I push? The computer asks a bigger question: what are all the pictures I can reach?",
   },
   {
-    title: "The AI considers possible pushes.",
-    body: "Walking around the room is cheap. The meaningful decision is which box to push, and in which direction.",
+    title: "Each picture is a state. Each push is an edge.",
+    body: "Put those snapshots on a page and connect the ones that differ by one box push. That drawing is a graph. Sokoban search is walking that graph.",
   },
   {
-    title: "Some paths look promising.",
-    body: "A heuristic estimates remaining work by matching boxes to goals. Lower is better — but it is only an estimate.",
+    title: "The frontier is a to-do list.",
+    body: "From the current snapshot, several pushes might be legal. Those next snapshots sit in a list called the frontier. BFS treats it as a queue. A* treats it as a priority queue. Greedy peeks only at the heuristic.",
   },
   {
-    title: "Some lead to deadlocks.",
-    body: "A box in a non-goal corner can never be pulled out. Entire futures disappear in a single push.",
+    title: "A guess ranks the unknown.",
+    body: "h is a heuristic: match leftover boxes to leftover goals, walking around walls. g is pushes already made. A* uses f = g + h so it does not wander, and it does not get greedy-blind.",
   },
   {
-    title: "The heuristic ranks the unknown.",
-    body: "f(n) = g(n) + h(n). Paid cost plus estimated cost. That number is how the search chooses.",
+    title: "Some edges are dead ends.",
+    body: "A box in a corner that is not a goal can never be pulled out. The search marks that state and never spends time on its children.",
   },
   {
-    title: "Different algorithms see different worlds.",
-    body: "BFS is thorough. Greedy is impatient. A* balances both. IDA* repeats itself to save memory. Beam keeps only a few candidates.",
-  },
-  {
-    title: "The search discovers the solution.",
-    body: "When a state has every box on a goal, the path back to the start is the plan. The interesting part was everything that almost worked.",
+    title: "The gold path is the plan.",
+    body: "When every box sits on a goal, the walk back to the start is the solution. You do not need the whole tree. You need to see the puzzle, the graph, and that gold chain together — the same idea as solving a cube with graph theory.",
   },
 ];
 
@@ -33,9 +29,10 @@ export function HowItWorks({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8">
       <p className="text-[11px] uppercase tracking-[0.2em] text-faint">How it works</p>
-      <h1 className="mt-3 font-serif text-4xl tracking-tight">AI reasoning, made visible.</h1>
+      <h1 className="mt-3 font-serif text-4xl tracking-tight">Graph search, in plain sight.</h1>
       <p className="mt-3 text-mute">
-        Heuristic is not a solver demo. It is a way to watch an algorithm think.
+        You do not need a CS degree. If you can follow a map, you can follow this: the left side
+        is the place, the right side is every useful snapshot, gold is the way home.
       </p>
       <ol className="mt-10 space-y-8">
         {STEPS.map((step, index) => (
@@ -53,7 +50,7 @@ export function HowItWorks({ onBack }: { onBack: () => void }) {
         onClick={onBack}
         className="mt-12 rounded-full bg-text px-5 py-2.5 text-sm text-void"
       >
-        Open the lab
+        Watch a puzzle solved
       </button>
     </div>
   );

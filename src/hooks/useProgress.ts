@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import type { SolutionStep } from "@/engine/search/types";
 
 export type SolvedRun = {
   pushes: number;
   moves: number;
   at: number;
+  steps?: SolutionStep[];
 };
 
 type Progress = {
@@ -43,7 +45,14 @@ export function useProgress() {
         !prev ||
         run.pushes < prev.pushes ||
         (run.pushes === prev.pushes && run.moves < prev.moves);
-      if (!better) return current.solved[id]!;
+      if (!better) {
+        if (prev && !prev.steps?.length && run.steps?.length) {
+          const saved = { ...prev, steps: run.steps };
+          persist({ solved: { ...current.solved, [id]: saved } });
+          return saved;
+        }
+        return prev!;
+      }
       const saved = { ...run, at: Date.now() };
       persist({ solved: { ...current.solved, [id]: saved } });
       return saved;

@@ -56,6 +56,7 @@ export type WorkerIn = {
   heuristicId?: string;
   maxNodes?: number;
   beamWidth?: number;
+  mode?: SolverRequest["mode"];
   board: WireBoard;
   state: WireState;
 };
