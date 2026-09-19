@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { pieceBoxStyle, usePieceMotion } from "@/components/sokoban/slide";
 
 type Props = {
   size: number;
@@ -6,19 +6,14 @@ type Props = {
   y: number;
   onGoal: boolean;
   reducedMotion: boolean;
+  snap?: boolean;
 };
 
-export function Box({ size, x, y, onGoal, reducedMotion }: Props) {
+export function Box({ size, x, y, onGoal, reducedMotion, snap }: Props) {
   const pad = size * 0.16;
+  const ref = usePieceMotion(x, y, size, snap, reducedMotion);
   return (
-    <motion.div
-      className="pointer-events-none absolute"
-      style={{ width: size, height: size }}
-      initial={reducedMotion ? false : { opacity: 0.4 }}
-      animate={{ left: x * size, top: y * size, opacity: 1 }}
-      transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 32 }}
-      aria-hidden
-    >
+    <div ref={ref} className="pointer-events-none absolute" style={pieceBoxStyle(size)} aria-hidden>
       <div
         className={[
           "absolute rounded-[4px] border",
@@ -28,6 +23,6 @@ export function Box({ size, x, y, onGoal, reducedMotion }: Props) {
       >
         <div className="absolute inset-[18%] border border-black/20 rounded-[2px]" />
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -8,7 +8,7 @@ type Props = {
 };
 
 const LINKS: Array<{ id: ViewId; label: string }> = [
-  { id: "lab", label: "Play" },
+  { id: "lab", label: "Watch" },
   { id: "compare", label: "Compare" },
   { id: "editor", label: "Editor" },
   { id: "how", label: "How it works" },

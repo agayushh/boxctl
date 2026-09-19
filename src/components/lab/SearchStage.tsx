@@ -5,9 +5,10 @@ import { SolverControls } from "@/components/controls/SolverControls";
 import { SearchMetrics } from "@/components/metrics/SearchMetrics";
 import { HeuristicPanel } from "@/components/metrics/HeuristicPanel";
 import { DecisionPanel } from "@/components/metrics/DecisionPanel";
-import type { AlgorithmId, SearchNode, SolverResult } from "@/engine/search/types";
+import type { AlgorithmId, SearchNode, SearchProgress, SolverResult } from "@/engine/search/types";
 import type { Board as SokobanBoard, SokobanState } from "@/engine/sokoban/types";
 import type { PlaybackFrame } from "@/visualization/search/SearchState";
+import { ACTION_GLYPH } from "@/utils/coordinates";
 
 type Props = {
   board: SokobanBoard;
@@ -29,98 +30,124 @@ type Props = {
   onSeek: (value: number) => void;
   onSelectNode: (id: string) => void;
   explain: boolean;
-  title?: string;
   subtitle?: string;
   cinema?: boolean;
   compact?: boolean;
   overrideState?: SokobanState | null;
+  liveStats?: SearchProgress | null;
+  focusId?: string | null;
+  highlight?: number[];
 };
 
 export function SearchStage(props: Props) {
-  const current = currentNode(props.frame, props.result);
+  const current = currentNode(props.frame, props.result, props.focusId);
   const parent = current?.parentId ? props.frame.nodes.get(current.parentId) ?? null : null;
   const display = props.overrideState ?? current?.state ?? props.start;
   const solutionIds = props.frame.solution?.pathIds ?? [];
-  const highlight = current?.deadlock?.affectedBoxes ?? [];
+  const highlight = props.highlight ?? current?.deadlock?.affectedBoxes ?? [];
   const live = props.status === "running";
+  const liveStats = live
+    ? {
+        ...props.frame.stats,
+        algorithm: props.algorithm,
+        ...props.liveStats,
+      }
+    : (props.result?.stats ?? props.frame.stats);
+  const focusId = props.focusId ?? props.frame.currentId;
 
   const nodes = useMemo(() => [...props.frame.nodes.values()], [props.frame.nodes]);
+  const algoName = props.algorithm === "astar" ? "A*" : props.algorithm.toUpperCase();
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className={`grid min-h-0 flex-1 ${props.cinema ? "" : "md:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]"}`}>
-        <section className="flex min-h-0 flex-col justify-center border-b border-line p-4 sm:p-6 md:border-b-0 md:border-r">
-          {props.title && (
-            <div className="mb-4">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-faint">{props.title}</p>
-              {props.subtitle && <p className="mt-1 text-sm text-mute">{props.subtitle}</p>}
-            </div>
-          )}
+      <div className={`grid min-h-0 flex-1 ${props.cinema ? "lg:grid-cols-[minmax(280px,0.7fr)_minmax(0,1.3fr)]" : "lg:grid-cols-[minmax(260px,0.74fr)_minmax(0,1.26fr)]"}`}>
+        <section className="relative flex min-h-0 flex-col justify-center border-b border-line p-4 sm:p-6 lg:border-b-0 lg:border-r">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
+            {live ? `${algoName} searching` : algoName}
+            {current ? ` · g ${current.g} · h ${current.h} · f ${current.f}` : ""}
+            {current?.action ? ` · ${ACTION_GLYPH[current.action]}` : ""}
+          </p>
           <Board
             board={props.board}
             state={display}
-            maxSize={props.cinema ? 560 : props.compact ? 280 : 480}
+            maxSize={props.cinema ? 520 : props.compact ? 280 : 420}
             highlight={highlight}
             compact={props.compact}
           />
+          {props.subtitle && (
+            <p className="mt-4 max-w-sm text-sm text-mute">{props.subtitle}</p>
+          )}
         </section>
-        <section className="min-h-[220px] min-h-0 overflow-hidden p-4 sm:p-6">
+        <section className="min-h-[240px] min-h-0 overflow-hidden p-4 sm:p-6">
           <SearchGraph
             nodes={nodes}
-            currentId={props.frame.currentId}
+            currentId={focusId}
             solutionIds={solutionIds}
             onSelect={props.onSelectNode}
             compact={props.cinema}
+            emptyHint={
+              live
+                ? "The tree grows as states are expanded."
+                : "Each node is a box push. Play to watch the tree unfold."
+            }
           />
         </section>
       </div>
       {!props.cinema && (
-        <div className="grid max-h-[40vh] shrink-0 gap-6 overflow-auto border-t border-line p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.1fr)]">
-          <SolverControls
-            algorithm={props.algorithm}
-            onAlgorithm={props.onAlgorithm}
-            playing={props.playing}
-            speed={props.speed}
-            cursor={props.cursor}
-            eventCount={props.eventCount}
-            onToggle={props.onToggle}
-            onRestart={props.onRestart}
-            onNext={props.onNext}
-            onPrev={props.onPrev}
-            onSpeed={props.onSpeed}
-            onSeek={props.onSeek}
-            loading={live}
-          />
-          <SearchMetrics stats={live ? props.frame.stats : (props.result?.stats ?? props.frame.stats)} live={live} />
-          <div className="grid gap-6">
-            <HeuristicPanel board={props.board} node={current} explain={props.explain} />
-            <DecisionPanel
-              node={current}
-              parent={parent}
-              board={props.board}
-              reason={props.frame.reason}
-              alternatives={props.frame.alternatives}
-              deadlockReason={props.frame.deadlockReason}
-              explain={props.explain}
+        <div className="shrink-0 border-t border-line">
+          <div className="flex flex-col gap-3 p-4 sm:px-6 sm:py-3">
+            <SolverControls
+              algorithm={props.algorithm}
+              onAlgorithm={props.onAlgorithm}
+              playing={props.playing}
+              speed={props.speed}
+              cursor={props.cursor}
+              eventCount={props.eventCount}
+              onToggle={props.onToggle}
+              onRestart={props.onRestart}
+              onNext={props.onNext}
+              onPrev={props.onPrev}
+              onSpeed={props.onSpeed}
+              onSeek={props.onSeek}
+              loading={live}
             />
           </div>
+          <details className="border-t border-line px-4 py-3 sm:px-6">
+            <summary className="cursor-pointer text-[11px] uppercase tracking-[0.18em] text-faint">
+              Why this state
+            </summary>
+            <div className="mt-4 grid gap-8 lg:grid-cols-3">
+              <SearchMetrics stats={liveStats} live={live} />
+              <HeuristicPanel board={props.board} node={current} explain={props.explain} />
+              <DecisionPanel
+                node={current}
+                parent={parent}
+                board={props.board}
+                reason={props.frame.reason}
+                alternatives={props.frame.alternatives}
+                deadlockReason={props.frame.deadlockReason}
+                explain={props.explain}
+              />
+            </div>
+          </details>
         </div>
       )}
       {props.cinema && (
         <div className="flex items-center justify-between border-t border-line px-6 py-4 text-sm text-mute">
-          <span>
-            Watching {props.algorithm.toUpperCase()} solve Sokoban
-          </span>
-          <span className="font-mono tabular">
-            {props.frame.stats.statesExpanded} states expanded
-          </span>
+          <span>{algoName} expanding the push graph</span>
+          <span className="font-mono tabular">{liveStats.statesExpanded} states</span>
         </div>
       )}
     </div>
   );
 }
 
-function currentNode(frame: PlaybackFrame, result: SolverResult | null): SearchNode | null {
-  if (!frame.currentId) return null;
-  return frame.nodes.get(frame.currentId) ?? result?.nodes.find((node) => node.id === frame.currentId) ?? null;
+function currentNode(
+  frame: PlaybackFrame,
+  result: SolverResult | null,
+  focusId?: string | null,
+): SearchNode | null {
+  const id = focusId ?? frame.currentId;
+  if (!id) return null;
+  return frame.nodes.get(id) ?? result?.nodes.find((node) => node.id === id) ?? null;
 }

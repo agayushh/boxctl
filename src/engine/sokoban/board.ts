@@ -67,6 +67,7 @@ export function cellKind(
   cell: number,
 ): CellKind {
   if (board.walls.has(cell)) return "wall";
+  if (!board.floors.has(cell) && !board.goals.has(cell)) return "void";
   const onGoal = board.goals.has(cell);
   if (state.player === cell) return onGoal ? "player-on-goal" : "player";
   if (state.boxes.has(cell)) return onGoal ? "box-on-goal" : "box";

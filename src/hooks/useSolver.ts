@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { AlgorithmId, SolverResult } from "@/engine/search/types";
+import type { AlgorithmId, SearchProgress, SolverResult } from "@/engine/search/types";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
 import { solve } from "@/engine/search/solver";
 import { serializeBoard, serializeState } from "@/engine/search/serialize";
@@ -15,6 +15,7 @@ export function useSolver(
   enabled = true,
 ) {
   const [result, setResult] = useState<SolverResult | null>(null);
+  const [progress, setProgress] = useState<SearchProgress | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef(0);
@@ -40,6 +41,7 @@ export function useSolver(
       if (!enabled) {
         setStatus("idle");
         setResult(null);
+        setProgress(null);
       }
       return;
     }
@@ -47,10 +49,13 @@ export function useSolver(
     requestRef.current = requestId;
     setStatus("running");
     setError(null);
+    setProgress(null);
+    setResult(null);
 
     const finish = (next: SolverResult) => {
       if (requestId !== requestRef.current) return;
       setResult(next);
+      setProgress(null);
       setStatus("done");
     };
     const fail = (message: string) => {
@@ -67,7 +72,11 @@ export function useSolver(
     if (worker) {
       const onMessage = (event: MessageEvent<WorkerOut>) => {
         if (event.data.requestId !== requestId) return;
-        finish(event.data.result);
+        if (event.data.progress) {
+          setProgress(event.data.progress);
+          return;
+        }
+        if (event.data.result) finish(event.data.result);
       };
       const onError = () => fail("Worker failed; ran search on the main thread.");
       worker.addEventListener("message", onMessage);
@@ -89,5 +98,5 @@ export function useSolver(
     return undefined;
   }, [algorithm, puzzleKey, board, state, enabled]);
 
-  return { result, status, error };
+  return { result, status, error, progress };
 }

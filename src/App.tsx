@@ -45,7 +45,7 @@ export default function App() {
           cinema={state.view === "cinema"}
           onView={(view) => {
             if (view === "compare") patch({ view: "lab", mode: "compare" });
-            else if (view === "lab") patch({ view: "lab", mode: "play" });
+            else if (view === "lab") patch({ view: "lab", mode: "watch" });
             else if (view === "cinema") patch({ view: "cinema", mode: "watch" });
             else patch({ view });
           }}
@@ -61,6 +61,7 @@ export default function App() {
         <div className="min-h-0 flex-1 overflow-auto">
           <Landing
             onExplore={() => patch({ view: "lab", mode: "play" })}
+            onWatch={() => patch({ view: "lab", mode: "watch" })}
             onHow={() => patch({ view: "how" })}
           />
         </div>

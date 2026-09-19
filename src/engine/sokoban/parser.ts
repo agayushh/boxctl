@@ -1,4 +1,4 @@
-import { pack } from "@/utils/coordinates";
+import { ACTIONS, pack, stepPacked } from "@/utils/coordinates";
 import { createBoard } from "@/engine/sokoban/board";
 import type { ParsedLevel } from "@/engine/sokoban/types";
 import { createState } from "@/engine/sokoban/state";
@@ -35,7 +35,7 @@ export function parseLevel(ascii: string): ParsedLevel {
   let player: number | null = null;
 
   for (let y = 0; y < height; y += 1) {
-    const row = rows[y]!.padEnd(width, " ");
+    const row = rows[y]!.padEnd(width, "_");
     for (let x = 0; x < width; x += 1) {
       const ch = row[x]!;
       const cell = pack(x, y);
@@ -60,6 +60,21 @@ export function parseLevel(ascii: string): ParsedLevel {
   }
 
   if (player === null) throw new Error("Level has no player.");
+
+  const room = new Set<number>([player]);
+  const queue = [player];
+  for (let i = 0; i < queue.length; i += 1) {
+    const current = queue[i]!;
+    for (const action of ACTIONS) {
+      const next = stepPacked(current, action);
+      if (room.has(next) || !floors.has(next) || walls.has(next)) continue;
+      room.add(next);
+      queue.push(next);
+    }
+  }
+  for (const cell of [...floors]) {
+    if (!room.has(cell) && !goals.has(cell)) floors.delete(cell);
+  }
 
   const board = createBoard({ width, height, walls, goals, floors });
   return {

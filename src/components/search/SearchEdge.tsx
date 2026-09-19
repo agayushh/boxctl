@@ -4,22 +4,35 @@ type Props = {
   x2: number;
   y2: number;
   solution: boolean;
-  reducedMotion: boolean;
+  active?: boolean;
+  reducedMotion?: boolean;
 };
 
-export function SearchEdge({ x1, y1, x2, y2, solution, reducedMotion }: Props) {
-  const length = Math.hypot(x2 - x1, y2 - y1);
+export function SearchEdge({ x1, y1, x2, y2, solution, active }: Props) {
+  const color = solution ? "#d7b36a" : active ? "rgba(236,236,239,0.55)" : "rgba(255,255,255,0.12)";
   return (
-    <line
-      x1={x1}
-      y1={y1}
-      x2={x2}
-      y2={y2}
-      stroke={solution ? "#d7b36a" : "rgba(255,255,255,0.14)"}
-      strokeWidth={solution ? 1.8 : 1}
-      strokeDasharray={reducedMotion ? undefined : length}
-      strokeDashoffset={reducedMotion ? 0 : 0}
-      className={reducedMotion ? undefined : "origin-center"}
-    />
+    <g>
+      {solution && (
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke="#d7b36a"
+          strokeWidth={6}
+          strokeOpacity={0.18}
+          strokeLinecap="round"
+        />
+      )}
+      <line
+        x1={x1}
+        y1={y1}
+        x2={x2}
+        y2={y2}
+        stroke={color}
+        strokeWidth={solution ? 2.2 : active ? 1.6 : 1}
+        strokeLinecap="round"
+      />
+    </g>
   );
 }

@@ -7,10 +7,11 @@ import { LEVELS } from "@/levels";
 
 type Props = {
   onExplore: () => void;
+  onWatch: () => void;
   onHow: () => void;
 };
 
-export function Landing({ onExplore, onHow }: Props) {
+export function Landing({ onExplore, onWatch, onHow }: Props) {
   const parsed = useMemo(() => parseLevel(LEVELS[0]!.ascii), []);
   const { result, status } = useSolver(parsed.board, parsed.state, "astar", "landing-l1");
   const playback = useSolutionPlayback(parsed.state, result, true);
@@ -21,16 +22,24 @@ export function Landing({ onExplore, onHow }: Props) {
         <div className="max-w-xl">
           <p className="text-[11px] uppercase tracking-[0.24em] text-faint">Heuristic</p>
           <h1 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight text-text sm:text-6xl">
-            Watch an AI solve Sokoban.
+            Watch search unfold.
           </h1>
           <p className="mt-4 max-w-md text-base leading-relaxed text-mute">
-            Play all 60 Maths Is Fun levels, then watch the solver replay its route on the same board.
+            A Sokoban board on one side, the growing state graph on the other — the same idea as
+            solving a cube with graph theory. Play if you want. The point is the tree.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={onExplore}
+              onClick={onWatch}
               className="rounded-full bg-text px-5 py-2.5 text-sm text-void"
+            >
+              Watch the search
+            </button>
+            <button
+              type="button"
+              onClick={onExplore}
+              className="rounded-full border border-line px-5 py-2.5 text-sm text-mute hover:text-text"
             >
               Play 60 levels
             </button>
@@ -47,7 +56,7 @@ export function Landing({ onExplore, onHow }: Props) {
           {status === "running"
             ? "Finding a route for level 1…"
             : result?.solution
-              ? `Level 1 · ${result.solution.pushes.length} pushes`
+              ? `Level 1 · ${result.solution.pushes.length} pushes through the graph`
               : "Level 1 of 60"}
         </p>
       </div>

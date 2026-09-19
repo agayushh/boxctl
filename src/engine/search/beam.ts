@@ -1,5 +1,5 @@
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { Heuristic, SearchNode, SolverResult } from "@/engine/search/types";
+import type { Heuristic, SearchNode, SearchProgress, SolverResult } from "@/engine/search/types";
 import { SearchRecorder } from "@/engine/search/recorder";
 import {
   expand,
@@ -16,6 +16,7 @@ export function beam(
   heuristic: Heuristic,
   maxNodes: number,
   beamWidth: number,
+  onProgress?: (progress: SearchProgress) => void,
 ): SolverResult {
   const recorder = new SearchRecorder("beam", heuristic.name);
   const t0 = performance.now();
@@ -41,6 +42,14 @@ export function beam(
         return recorder.snapshot("No solution found before the search limit.");
       }
       recorder.expanded(node);
+      if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
+        onProgress({
+          statesGenerated: recorder.stats.statesGenerated,
+          statesExpanded: recorder.stats.statesExpanded,
+          deadlocksDetected: recorder.stats.deadlocksDetected,
+          peakFrontier: recorder.stats.peakFrontier,
+        });
+      }
       for (const child of expand(recorder, board, heuristic, node)) {
         if (seen.has(child.id)) {
           recorder.discovered(child, false);

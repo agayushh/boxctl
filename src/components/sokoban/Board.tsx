@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { pack, unpack } from "@/utils/coordinates";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { manhattanPacked, pack, unpack } from "@/utils/coordinates";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
 import { Cell } from "@/components/sokoban/Cell";
 import { Box } from "@/components/sokoban/Box";
 import { Player } from "@/components/sokoban/Player";
+import { useTrackedBoxes } from "@/components/sokoban/trackBoxes";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 type Props = {
@@ -38,8 +39,24 @@ export function Board({ board, state, maxSize = 520, highlight = [], compact, on
     return Math.max(16, Math.min(fromCap, fromWidth || fromCap));
   }, [board.width, board.height, maxSize, avail, compact]);
 
-  const boxes = useMemo(() => [...state.boxes], [state.boxes]);
+  const resetKey = `${board.width}x${board.height}:${[...board.goals].sort((a, b) => a - b).join(",")}`;
+  const boxes = useTrackedBoxes(state.boxes, resetKey);
   const highlightSet = useMemo(() => new Set(highlight), [highlight]);
+  const player = unpack(state.player);
+
+  const committedPlayer = useRef(state.player);
+  const lastReset = useRef(resetKey);
+  const lastSize = useRef(size);
+  if (lastReset.current !== resetKey) {
+    lastReset.current = resetKey;
+    committedPlayer.current = state.player;
+  }
+  const sizeSnap = lastSize.current !== size;
+  const playerSnap = sizeSnap || manhattanPacked(committedPlayer.current, state.player) > 1;
+  useLayoutEffect(() => {
+    committedPlayer.current = state.player;
+    lastSize.current = size;
+  }, [state.player, size]);
 
   return (
     <div ref={frameRef} className="flex w-full justify-center overflow-hidden">
@@ -87,34 +104,36 @@ export function Board({ board, state, maxSize = 520, highlight = [], compact, on
             ) : (
               <Cell
                 key={cell}
-                kind={kind}
                 size={size}
                 x={x}
                 y={y}
+                kind={kind}
                 highlight={highlightSet.has(cell)}
               />
             );
           }),
         )}
       </div>
-      {boxes.map((cell) => {
-        const pos = unpack(cell);
+      {boxes.map((box) => {
+        const pos = unpack(box.cell);
         return (
           <Box
-            key={`box-${cell}`}
+            key={box.id}
             size={size}
             x={pos.x}
             y={pos.y}
-            onGoal={board.goals.has(cell)}
+            onGoal={board.goals.has(box.cell)}
             reducedMotion={reducedMotion}
+            snap={sizeSnap || box.snap}
           />
         );
       })}
       <Player
         size={size}
-        x={unpack(state.player).x}
-        y={unpack(state.player).y}
+        x={player.x}
+        y={player.y}
         reducedMotion={reducedMotion}
+        snap={playerSnap}
       />
     </div>
     </div>

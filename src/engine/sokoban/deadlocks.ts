@@ -250,12 +250,7 @@ const DETECTORS = [
   detectUnsolvableAssignment,
 ];
 
-export function detectDeadlock(
-  state: SokobanState,
-  board: Board,
-): DeadlockInfo {
-  if (isSolved(state, board)) return { detected: false };
-
+function deadSquare(state: SokobanState, board: Board): DeadlockInfo {
   for (const box of state.boxes) {
     if (!board.goals.has(box) && board.deadSquares.has(box)) {
       return {
@@ -267,6 +262,31 @@ export function detectDeadlock(
       };
     }
   }
+  return { detected: false };
+}
+
+/**
+ * Proven unsolvable positions only. Wall/freeze/assignment detectors can
+ * reject legal pushes, which made campaign levels look unsolvable.
+ */
+export function detectSearchDeadlock(
+  state: SokobanState,
+  board: Board,
+): DeadlockInfo {
+  if (isSolved(state, board)) return { detected: false };
+  const squares = deadSquare(state, board);
+  if (squares.detected) return squares;
+  return detectCornerDeadlock(state, board);
+}
+
+export function detectDeadlock(
+  state: SokobanState,
+  board: Board,
+): DeadlockInfo {
+  if (isSolved(state, board)) return { detected: false };
+
+  const squares = deadSquare(state, board);
+  if (squares.detected) return squares;
 
   for (const detector of DETECTORS) {
     const result = detector(state, board);

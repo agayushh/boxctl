@@ -34,6 +34,10 @@ export class MinHeap<T> {
     return [...this.data];
   }
 
+  peekSlice(count: number): T[] {
+    return this.data.slice(0, count);
+  }
+
   private bubbleUp(index: number): void {
     let i = index;
     while (i > 0) {

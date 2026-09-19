@@ -30,8 +30,7 @@ export function HeuristicPanel({ board, node, explain }: Props) {
       </div>
       {explain && (
         <p className="mt-3 text-sm leading-relaxed text-mute">
-          h(n) is the minimum-cost assignment of boxes to goals using Manhattan distance.
-          It never gives the same goal to two boxes.
+          h(n) is the cheapest assignment of boxes to goals using push distance around walls. Two boxes never share a goal.
         </p>
       )}
       <ul className="mt-3 space-y-1 font-mono text-[11px] text-faint">

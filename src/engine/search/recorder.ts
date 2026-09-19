@@ -37,6 +37,10 @@ export class SearchRecorder {
     if (size > this.stats.peakFrontier) this.stats.peakFrontier = size;
   }
 
+  get accepting(): boolean {
+    return this.recording && this.events.length < this.maxEvents;
+  }
+
   nextDiscovery(): number {
     const value = this.discovery;
     this.discovery += 1;
@@ -129,9 +133,27 @@ export class SearchRecorder {
   }
 
   snapshot(failedReason?: string) {
+    const keep = new Set<string>();
+    for (const event of this.events) {
+      if ("nodeId" in event && event.nodeId) keep.add(event.nodeId);
+      if ("alternatives" in event) {
+        for (const alt of event.alternatives) {
+          if (alt.nodeId) keep.add(alt.nodeId);
+        }
+      }
+    }
+    if (this.solution) {
+      for (const id of this.solution.pathIds) keep.add(id);
+    }
+    const nodes =
+      keep.size === 0
+        ? [...this.nodes.values()]
+        : [...keep]
+            .map((id) => this.nodes.get(id))
+            .filter((node): node is SearchNode => node !== undefined);
     return {
       events: this.events,
-      nodes: [...this.nodes.values()],
+      nodes,
       stats: { ...this.stats },
       solution: this.solution,
       failedReason,

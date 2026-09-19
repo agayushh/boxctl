@@ -56,6 +56,7 @@ export function useSolutionPlayback(
     playing,
     speed,
     setSpeed,
+    setCursor: setIndex,
     highlight,
     total: Math.max(0, frames.length - 1),
     action: step?.action,

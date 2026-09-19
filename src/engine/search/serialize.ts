@@ -1,5 +1,5 @@
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { AlgorithmId, SolverRequest } from "@/engine/search/types";
+import type { AlgorithmId, SearchProgress, SolverRequest } from "@/engine/search/types";
 
 export type WireBoard = {
   width: number;
@@ -62,5 +62,6 @@ export type WorkerIn = {
 
 export type WorkerOut = {
   requestId: number;
-  result: import("@/engine/search/types").SolverResult;
+  result?: import("@/engine/search/types").SolverResult;
+  progress?: SearchProgress;
 };

@@ -61,7 +61,7 @@ export function PlaybackControls({
       </div>
       <label className="block">
         <span className="mb-1 flex justify-between text-[11px] text-mute">
-          <span>Search events</span>
+          <span>Timeline</span>
           <span className="tabular">
             {formatInt(eventCount === 0 ? 0 : cursor + 1)} / {formatInt(eventCount)}
           </span>

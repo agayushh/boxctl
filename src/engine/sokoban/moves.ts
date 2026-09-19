@@ -80,6 +80,15 @@ export function reachablePlayerCells(
   return reached;
 }
 
+/** Lowest reachable cell. Same boxes + same room are one push-search state. */
+export function canonicalPlayer(state: SokobanState, board: Board): number {
+  let min = state.player;
+  for (const cell of reachablePlayerCells(state, board)) {
+    if (cell < min) min = cell;
+  }
+  return min;
+}
+
 export function playerWalkLength(
   state: SokobanState,
   board: Board,
@@ -130,6 +139,7 @@ export function generatePushes(
       const stand = stepPacked(box, oppositeAction(action));
       if (!dist.has(stand)) continue;
       if (!isWalkable(board, dest) || state.boxes.has(dest)) continue;
+      if (board.deadSquares.has(dest) && !board.goals.has(dest)) continue;
 
       const boxes = new Set(state.boxes);
       boxes.delete(box);

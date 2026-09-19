@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SolverResult } from "@/engine/search/types";
+import type { SearchEvent, SolverResult } from "@/engine/search/types";
 import { applyEvents, emptyFrame } from "@/visualization/search/SearchState";
 import type { SearchStats } from "@/engine/search/types";
 
@@ -18,16 +18,42 @@ const EMPTY_STATS: SearchStats = {
 
 export const SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
 
+const KEYFRAME: Set<SearchEvent["type"]> = new Set([
+  "STATE_EVALUATED",
+  "DEADLOCK",
+  "SOLUTION",
+  "SEARCH_COMPLETE",
+  "BOUND",
+]);
+
+function keyframeIndices(events: SearchEvent[], max = 90): number[] {
+  const hits = events
+    .map((event, index) => (KEYFRAME.has(event.type) ? index : -1))
+    .filter((index) => index >= 0);
+  const source = hits.length > 0 ? hits : events.map((_, index) => index);
+  if (source.length <= max) return source;
+  const picked: number[] = [];
+  const step = (source.length - 1) / (max - 1);
+  for (let i = 0; i < max; i += 1) picked.push(source[Math.round(i * step)]!);
+  const last = source[source.length - 1]!;
+  if (picked[picked.length - 1] !== last) picked.push(last);
+  return [...new Set(picked)];
+}
+
 export function usePlayback(result: SolverResult | null, autoplay = true) {
+  const frames = useMemo(
+    () => (result ? keyframeIndices(result.events) : []),
+    [result],
+  );
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(autoplay);
   const [speed, setSpeed] = useState(1);
-  const eventCount = result?.events.length ?? 0;
+  const eventCount = frames.length;
 
   useEffect(() => {
     setCursor(0);
-    setPlaying(autoplay && (result?.events.length ?? 0) > 0);
-  }, [result, autoplay]);
+    setPlaying(autoplay && frames.length > 0);
+  }, [result, autoplay, frames.length]);
 
   useEffect(() => {
     if (!playing || !result || eventCount === 0) return;
@@ -35,7 +61,7 @@ export function usePlayback(result: SolverResult | null, autoplay = true) {
       setPlaying(false);
       return;
     }
-    const delay = Math.max(16, 140 / speed);
+    const delay = Math.max(70, 200 / speed);
     const id = window.setTimeout(() => {
       setCursor((value) => Math.min(eventCount - 1, value + 1));
     }, delay);
@@ -44,8 +70,9 @@ export function usePlayback(result: SolverResult | null, autoplay = true) {
 
   const frame = useMemo(() => {
     if (!result) return emptyFrame(EMPTY_STATS);
-    return applyEvents(result.events, result.nodes, result.stats, result.solution, cursor);
-  }, [result, cursor]);
+    const eventIndex = frames[cursor] ?? 0;
+    return applyEvents(result.events, result.nodes, result.stats, result.solution, eventIndex);
+  }, [result, cursor, frames]);
 
   const restart = () => {
     setCursor(0);

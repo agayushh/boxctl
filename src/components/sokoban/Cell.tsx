@@ -24,10 +24,10 @@ function CellInner({ kind, size, x, y, highlight }: Props) {
         className={[
           "absolute inset-[1px]",
           isWall
-            ? "bg-[#1a1a20] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            ? "rounded-[3px] bg-[#3a3a46] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
             : kind === "void"
               ? "bg-transparent"
-              : "bg-[#121216]",
+              : "rounded-[2px] bg-[#14141a] ring-1 ring-inset ring-white/5",
           highlight ? "ring-1 ring-gold/50" : "",
         ].join(" ")}
         style={{ borderRadius: isWall ? 3 : 2 }}

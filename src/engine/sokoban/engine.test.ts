@@ -231,4 +231,17 @@ describe("catalog levels", () => {
     expect(result.solution, `${level.id}: ${result.failedReason}`).not.toBeNull();
     expect(pushPathSolves(parsed.state, parsed.board, result.solution!.steps)).toBe(true);
   });
+
+  it("A* solves campaign level 2", () => {
+    const level = LEVELS[1]!;
+    const parsed = parseLevel(level.ascii);
+    const result = solve({
+      board: parsed.board,
+      state: parsed.state,
+      algorithm: "astar",
+      maxNodes: 150_000,
+    });
+    expect(result.solution, `${level.id}: ${result.failedReason}`).not.toBeNull();
+    expect(pushPathSolves(parsed.state, parsed.board, result.solution!.steps)).toBe(true);
+  }, 60_000);
 });

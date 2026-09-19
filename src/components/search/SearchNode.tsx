@@ -3,14 +3,16 @@ import type { LayoutNode } from "@/visualization/search/graphLayout";
 type Props = {
   node: LayoutNode;
   current: boolean;
+  onPath: boolean;
+  dim?: boolean;
   reducedMotion: boolean;
   onSelect: (id: string) => void;
 };
 
-export function SearchNode({ node, current, reducedMotion, onSelect }: Props) {
+export function SearchNode({ node, current, onPath, dim, reducedMotion, onSelect }: Props) {
   if (node.id === "__agg") {
     return (
-      <g transform={`translate(${node.x}, ${node.y})`}>
+      <g transform={`translate(${node.x}, ${node.y})`} opacity={0.7}>
         <text
           textAnchor="middle"
           fill="#8b8b98"
@@ -23,61 +25,66 @@ export function SearchNode({ node, current, reducedMotion, onSelect }: Props) {
     );
   }
 
-  const r = current ? 7 : node.status === "solution" ? 5.5 : node.status === "deadlock" ? 5 : 4;
-  const fill =
-    node.status === "evaluating" || current
-      ? "#ececef"
-      : node.status === "solution"
-        ? "#d7b36a"
-        : node.status === "deadlock"
-          ? "#d07a7a"
-          : node.status === "frontier"
-            ? "transparent"
-            : node.status === "pruned"
-              ? "transparent"
-              : "#6d6d78";
-  const stroke =
-    node.status === "frontier"
+  const r = current ? 7 : onPath ? 5.5 : node.status === "deadlock" ? 4.5 : 3.6;
+  const fill = current
+    ? "#ececef"
+    : onPath
+      ? "#d7b36a"
+      : node.status === "deadlock"
+        ? "#d07a7a"
+        : node.status === "frontier"
+          ? "#1c2438"
+          : "#6d6d78";
+  const stroke = current
+    ? "#ececef"
+    : node.status === "frontier" && !onPath
       ? "#8aa4e8"
-      : node.status === "pruned"
-        ? "#5c5c68"
-        : current
-          ? "#ececef"
-          : "transparent";
+      : onPath
+        ? "#d7b36a"
+        : "transparent";
 
   return (
     <g
       transform={`translate(${node.x}, ${node.y})`}
-      className={reducedMotion || !current ? undefined : "origin-center"}
+      opacity={dim && !current && !onPath ? 0.28 : 1}
     >
-      <title>
-        {`g=${node.g} h=${node.h} f=${node.f}`}
-      </title>
-      <circle
-        r={current ? r + 5 : 0}
-        fill="none"
-        stroke="#ececef"
-        strokeOpacity={current ? 0.25 : 0}
-        className={current && !reducedMotion ? "animate-pulse" : undefined}
-      />
-      {node.status === "deadlock" ? (
+      <title>{`g=${node.g}  h=${node.h}  f=${node.f}`}</title>
+      {current && (
+        <circle
+          r={r + 10}
+          fill="none"
+          stroke="#ececef"
+          strokeOpacity={0.28}
+          className={reducedMotion ? undefined : "animate-pulse"}
+        />
+      )}
+      {current && <circle r={r + 5} fill="#ececef" fillOpacity={0.08} />}
+      {onPath && !current && <circle r={r + 4} fill="#d7b36a" fillOpacity={0.14} />}
+      {node.status === "deadlock" && !onPath ? (
         <rect
-          x={-4.5}
-          y={-4.5}
-          width={9}
-          height={9}
+          x={-4.2}
+          y={-4.2}
+          width={8.4}
+          height={8.4}
           transform="rotate(45)"
           fill={fill}
-          role="img"
         />
       ) : (
-        <circle r={r} fill={fill} stroke={stroke} strokeWidth={1.4} />
+        <circle r={r} fill={fill} stroke={stroke} strokeWidth={1.5} />
       )}
-      {node.status === "pruned" && (
-        <path d="M-3 -3 L3 3 M3 -3 L-3 3" stroke="#5c5c68" strokeWidth="1" />
+      {current && (
+        <text
+          y={-14}
+          textAnchor="middle"
+          fill="#ececef"
+          fontSize="10"
+          fontFamily="IBM Plex Mono, monospace"
+        >
+          f={node.f}
+        </text>
       )}
       <circle
-        r={10}
+        r={12}
         fill="transparent"
         className="cursor-pointer"
         onClick={() => onSelect(node.id)}

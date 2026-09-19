@@ -1,5 +1,5 @@
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { Heuristic, SolverResult } from "@/engine/search/types";
+import type { Heuristic, SearchProgress, SolverResult } from "@/engine/search/types";
 import { SearchRecorder } from "@/engine/search/recorder";
 import {
   expand,
@@ -15,6 +15,7 @@ export function bfs(
   start: SokobanState,
   heuristic: Heuristic,
   maxNodes: number,
+  onProgress?: (progress: SearchProgress) => void,
 ): SolverResult {
   const recorder = new SearchRecorder("bfs", heuristic.name);
   const t0 = performance.now();
@@ -43,6 +44,14 @@ export function bfs(
     }
     if (recorder.stats.statesExpanded >= maxNodes) break;
     recorder.expanded(node);
+    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
+      onProgress({
+        statesGenerated: recorder.stats.statesGenerated,
+        statesExpanded: recorder.stats.statesExpanded,
+        deadlocksDetected: recorder.stats.deadlocksDetected,
+        peakFrontier: recorder.stats.peakFrontier,
+      });
+    }
     for (const child of expand(recorder, board, heuristic, node)) {
       if (seen.has(child.id)) {
         recorder.discovered(child, false);

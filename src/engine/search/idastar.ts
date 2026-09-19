@@ -1,5 +1,5 @@
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { Heuristic, SolverResult } from "@/engine/search/types";
+import type { Heuristic, SearchProgress, SolverResult } from "@/engine/search/types";
 import { SearchRecorder } from "@/engine/search/recorder";
 import {
   expand,
@@ -16,6 +16,7 @@ export function idastar(
   start: SokobanState,
   heuristic: Heuristic,
   maxNodes: number,
+  onProgress?: (progress: SearchProgress) => void,
 ): SolverResult {
   const recorder = new SearchRecorder("idastar", heuristic.name);
   const t0 = performance.now();
@@ -39,6 +40,14 @@ export function idastar(
       return FOUND;
     }
     recorder.expanded(node);
+    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
+      onProgress({
+        statesGenerated: recorder.stats.statesGenerated,
+        statesExpanded: recorder.stats.statesExpanded,
+        deadlocksDetected: recorder.stats.deadlocksDetected,
+        peakFrontier: recorder.stats.peakFrontier,
+      });
+    }
 
     let nextBound = Number.POSITIVE_INFINITY;
     const children = expand(recorder, board, heuristic, node).sort((a, b) => a.f - b.f);

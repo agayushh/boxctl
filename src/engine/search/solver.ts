@@ -6,7 +6,7 @@ import { greedy } from "@/engine/search/greedy";
 import { idastar } from "@/engine/search/idastar";
 import { beam } from "@/engine/search/beam";
 
-export const DEFAULT_MAX_NODES = 50_000;
+export const DEFAULT_MAX_NODES = 150_000;
 export const DEFAULT_BEAM_WIDTH = 24;
 
 export function solve(request: SolverRequest): SolverResult {
@@ -16,16 +16,16 @@ export function solve(request: SolverRequest): SolverResult {
 
   switch (request.algorithm) {
     case "bfs":
-      return bfs(request.board, request.state, heuristic, maxNodes);
+      return bfs(request.board, request.state, heuristic, maxNodes, request.onProgress);
     case "greedy":
-      return greedy(request.board, request.state, heuristic, maxNodes);
+      return greedy(request.board, request.state, heuristic, maxNodes, request.onProgress);
     case "idastar":
-      return idastar(request.board, request.state, heuristic, maxNodes);
+      return idastar(request.board, request.state, heuristic, maxNodes, request.onProgress);
     case "beam":
-      return beam(request.board, request.state, heuristic, maxNodes, beamWidth);
+      return beam(request.board, request.state, heuristic, maxNodes, beamWidth, request.onProgress);
     case "astar":
     default:
-      return astar(request.board, request.state, heuristic, maxNodes);
+      return astar(request.board, request.state, heuristic, maxNodes, request.onProgress);
   }
 }
 

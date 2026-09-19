@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { parseLevel } from "@/engine/sokoban/parser";
 import { useSokoban } from "@/hooks/useSokoban";
 import { useSolver } from "@/hooks/useSolver";
+import { usePlayback } from "@/hooks/usePlayback";
 import { useSolutionPlayback } from "@/hooks/useSolutionPlayback";
+import { SearchStage } from "@/components/lab/SearchStage";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useProgress } from "@/hooks/useProgress";
 import { Board } from "@/components/sokoban/Board";
-import { AlgorithmSelector } from "@/components/controls/AlgorithmSelector";
 import { LevelSelect } from "@/components/campaign/LevelSelect";
 import { LevelComplete } from "@/components/campaign/LevelComplete";
 import { CAMPAIGN_STATS, asDefinition, campaignAscii, levelByNumber, levels } from "@/levels";
@@ -48,18 +49,35 @@ export function Lab({
   const [complete, setComplete] = useState(false);
 
   const watching = cinema || mode === "watch";
-  const { result, status } = useSolver(
+  const { result, status, progress: searchProgress } = useSolver(
     parsed.board,
     parsed.state,
     algorithm,
     `${ascii}|${algorithm}`,
     watching || mode === "compare",
   );
-  const playback = useSolutionPlayback(parsed.state, result, watching);
+  const search = usePlayback(result, watching);
+  const route = useSolutionPlayback(parsed.state, result, false);
+  const [watchView, setWatchView] = useState<"search" | "path">("search");
 
   useEffect(() => {
     setComplete(false);
-  }, [level.id, ascii]);
+    setWatchView("search");
+  }, [level.id, ascii, algorithm]);
+
+  useEffect(() => {
+    if (!watching || !result?.solution) return;
+    if (watchView !== "search") return;
+    if (search.playing || search.eventCount === 0) return;
+    if (search.cursor < search.eventCount - 1) return;
+    setWatchView("path");
+  }, [watching, result, watchView, search.playing, search.cursor, search.eventCount]);
+
+  useEffect(() => {
+    if (watchView === "path") route.restart();
+    // Restart only when the watch phase changes, not on every route identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchView]);
 
   useEffect(() => {
     if (mode === "play" && campaign && game.solved) {
@@ -76,16 +94,24 @@ export function Lab({
   useKeyboard({
     enabled: !selector && !cinema,
     onMove: mode === "play" ? game.move : undefined,
-    onToggle: watching ? playback.toggle : undefined,
+    onToggle: watching ? (watchView === "path" ? route.toggle : search.toggle) : undefined,
     onReset: () => {
       game.reset();
-      if (watching) playback.restart();
+      search.restart();
+      route.restart();
     },
-    onNext: watching ? playback.next : () => go(level.id + 1),
-    onPrev: watching ? playback.prev : () => go(level.id - 1),
+    onNext: watching
+      ? watchView === "path"
+        ? route.next
+        : search.next
+      : () => go(level.id + 1),
+    onPrev: watching
+      ? watchView === "path"
+        ? route.prev
+        : search.prev
+      : () => go(level.id - 1),
   });
 
-  const boardState = watching ? playback.state : game.state;
   const ai = CAMPAIGN_STATS[level.id];
   const yours = progress.solved[level.id];
 
@@ -119,7 +145,8 @@ export function Lab({
               label="Restart"
               onClick={() => {
                 game.reset();
-                playback.restart();
+                search.restart();
+                route.restart();
                 setComplete(false);
               }}
             />
@@ -138,44 +165,79 @@ export function Lab({
           algorithm={algorithm}
           cached={ai}
         />
+      ) : watching ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {result?.solution && !cinema && (
+            <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-2 sm:px-6">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-faint">Watch</p>
+              {(["search", "path"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setWatchView(item);
+                    if (item === "search") search.restart();
+                  }}
+                  className={[
+                    "rounded-full px-3 py-1 text-xs",
+                    watchView === item ? "bg-text text-void" : "text-mute",
+                  ].join(" ")}
+                >
+                  {item === "search" ? "Search tree" : "Solution path"}
+                </button>
+              ))}
+            </div>
+          )}
+          <SearchStage
+            board={parsed.board}
+            start={parsed.state}
+            algorithm={algorithm}
+            onAlgorithm={onAlgorithm}
+            result={result}
+            status={status}
+            liveStats={searchProgress}
+            frame={search.frame}
+            playing={watchView === "path" ? route.playing : search.playing}
+            speed={watchView === "path" ? route.speed : search.speed}
+            cursor={watchView === "path" ? route.index : search.cursor}
+            eventCount={watchView === "path" ? route.frames.length : search.eventCount}
+            onToggle={watchView === "path" ? route.toggle : search.toggle}
+            onRestart={watchView === "path" ? route.restart : search.restart}
+            onNext={watchView === "path" ? route.next : search.next}
+            onPrev={watchView === "path" ? route.prev : search.prev}
+            onSpeed={watchView === "path" ? route.setSpeed : search.setSpeed}
+            onSeek={watchView === "path" ? route.setCursor : search.setCursor}
+            onSelectNode={() => undefined}
+            explain
+            cinema={cinema}
+            overrideState={watchView === "path" ? route.state : null}
+            focusId={
+              watchView === "path" && result?.solution
+                ? (result.solution.pathIds[route.index] ?? result.solution.nodeId)
+                : search.frame.currentId
+            }
+            highlight={watchView === "path" ? route.highlight : undefined}
+            subtitle={
+              status === "running"
+                ? `${algorithm === "astar" ? "A*" : algorithm.toUpperCase()} is expanding the graph${
+                    searchProgress ? ` · ${formatInt(searchProgress.statesExpanded)} states` : ""
+                  }`
+                : result?.solution
+                  ? watchView === "path"
+                    ? `Tracing the ${result.solution.pushes.length}-push route through the graph.`
+                    : `Found in ${result.solution.pushes.length} pushes. The gold line is the route.`
+                  : "No route inside this search budget — you can still play the level."
+            }
+          />
+        </div>
       ) : (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-auto p-4 sm:p-6">
-          <Board
-            board={parsed.board}
-            state={boardState}
-            maxSize={watching ? 480 : 560}
-            highlight={watching ? playback.highlight : undefined}
-          />
-          {mode === "play" && (
-            <p className="text-center font-mono text-sm tabular text-mute">
-              Moves {game.moves} · Pushes {game.pushes}
-              <span className="mt-1 block text-xs text-faint">Arrow keys or WASD</span>
-            </p>
-          )}
-          {watching && (
-            <WatchStatus
-              status={status}
-              result={result}
-              playback={playback}
-              algorithm={algorithm}
-              cinema={cinema}
-              onAlgorithm={onAlgorithm}
-            />
-          )}
+          <Board board={parsed.board} state={game.state} maxSize={560} />
+          <p className="text-center font-mono text-sm tabular text-mute">
+            Moves {game.moves} · Pushes {game.pushes}
+            <span className="mt-1 block text-xs text-faint">Arrow keys or WASD</span>
+          </p>
         </section>
-      )}
-
-      {cinema && (
-        <div className="flex justify-between border-t border-line px-6 py-3 text-sm text-mute">
-          <span>
-            {result?.solution
-              ? `${algorithm.toUpperCase()} · push ${playback.index} of ${playback.total}`
-              : status === "running"
-                ? "Searching…"
-                : "No route in this search budget"}
-          </span>
-          <span className="font-mono tabular">{formatInt(result?.stats.statesExpanded)} states</span>
-        </div>
       )}
 
       {selector && (
@@ -209,75 +271,6 @@ export function Lab({
           onClose={() => setComplete(false)}
         />
       )}
-    </div>
-  );
-}
-
-function WatchStatus({
-  status,
-  result,
-  playback,
-  algorithm,
-  cinema,
-  onAlgorithm,
-}: {
-  status: string;
-  result: ReturnType<typeof useSolver>["result"];
-  playback: ReturnType<typeof useSolutionPlayback>;
-  algorithm: AlgorithmId;
-  cinema?: boolean;
-  onAlgorithm: (id: AlgorithmId) => void;
-}) {
-  if (status === "running") {
-    return <p className="text-sm text-mute">Searching for a route…</p>;
-  }
-  if (!result?.solution) {
-    return (
-      <div className="max-w-md text-center text-sm text-mute">
-        <p>No route inside this search budget.</p>
-        {result && (
-          <p className="mt-2 font-mono text-xs tabular text-faint">
-            {formatInt(result.stats.statesExpanded)} states ·{" "}
-            {formatInt(result.stats.deadlocksDetected)} deadlocks · {formatMs(result.stats.elapsedMs)}
-          </p>
-        )}
-        {!cinema && <div className="mt-4"><AlgorithmSelector value={algorithm} onChange={onAlgorithm} compact /></div>}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex w-full max-w-lg flex-col items-center gap-3">
-      <p className="font-mono text-sm tabular">
-        Push {playback.index} / {playback.total}
-        {playback.action ? ` · ${playback.action}` : ""}
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <NavButton label={playback.playing ? "Pause" : "Play"} onClick={playback.toggle} />
-        <NavButton label="Step" onClick={playback.next} />
-        <NavButton label="Restart" onClick={playback.restart} />
-        <div className="flex gap-1">
-          {[1, 2, 4].map((speed) => (
-            <button
-              key={speed}
-              type="button"
-              onClick={() => playback.setSpeed(speed)}
-              className={[
-                "rounded-full px-2 py-0.5 text-[11px]",
-                playback.speed === speed ? "bg-text text-void" : "text-mute",
-              ].join(" ")}
-            >
-              {speed}x
-            </button>
-          ))}
-        </div>
-      </div>
-      <p className="font-mono text-[11px] tabular text-faint">
-        {formatInt(result.stats.statesExpanded)} states ·{" "}
-        {formatInt(result.stats.deadlocksDetected)} deadlocks · {formatMs(result.stats.elapsedMs)}
-        {result.stats.playerMoves != null ? ` · ${result.stats.playerMoves} walks` : ""}
-      </p>
-      {!cinema && <AlgorithmSelector value={algorithm} onChange={onAlgorithm} compact />}
     </div>
   );
 }

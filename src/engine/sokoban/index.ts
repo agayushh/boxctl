@@ -31,6 +31,7 @@ export {
   pushPathSolves,
   playerWalkLength,
   reachablePlayerCells,
+  canonicalPlayer,
   tryMove,
 } from "@/engine/sokoban/moves";
 export { parseLevel, stringifyLevel } from "@/engine/sokoban/parser";
@@ -39,6 +40,7 @@ export {
   computeSimpleDeadSquares,
   detectCornerDeadlock,
   detectDeadlock,
+  detectSearchDeadlock,
   detectFreezeDeadlock,
   detectUnsolvableAssignment,
   detectWallDeadlock,

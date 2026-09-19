@@ -133,6 +133,14 @@ export type SolverRequest = {
   mode?: SolverMode;
   maxNodes?: number;
   beamWidth?: number;
+  onProgress?: (progress: SearchProgress) => void;
+};
+
+export type SearchProgress = {
+  statesGenerated: number;
+  statesExpanded: number;
+  deadlocksDetected: number;
+  peakFrontier: number;
 };
 
 export type SolverResult = {

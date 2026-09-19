@@ -1,8 +1,8 @@
 import { ACTION_GLYPH } from "@/utils/coordinates";
 import type { Action } from "@/utils/coordinates";
 import { hashState } from "@/engine/sokoban/state";
-import { generatePushes } from "@/engine/sokoban/moves";
-import { detectDeadlock } from "@/engine/sokoban/deadlocks";
+import { canonicalPlayer, generatePushes } from "@/engine/sokoban/moves";
+import { detectSearchDeadlock } from "@/engine/sokoban/deadlocks";
 import { isSolved } from "@/engine/sokoban/goals";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
 import type { Alternative, Heuristic, SearchNode, Solution } from "@/engine/search/types";
@@ -22,7 +22,10 @@ export function makeNode(
     playerWalks?: number;
   },
 ): SearchNode {
-  const id = hashState(input.state);
+  const id = hashState({
+    player: canonicalPlayer(input.state, input.board),
+    boxes: input.state.boxes,
+  });
   const h = input.heuristic.estimate(input.state, input.board);
   return {
     id,
@@ -87,7 +90,7 @@ export function expand(
       pushedTo: successor.pushedTo,
       playerWalks: successor.playerWalks,
     });
-    const deadlock = detectDeadlock(child.state, board);
+    const deadlock = detectSearchDeadlock(child.state, board);
     if (deadlock.detected) {
       child.deadlock = deadlock;
       recorder.discovered(child);
