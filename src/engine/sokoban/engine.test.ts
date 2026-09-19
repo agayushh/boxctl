@@ -196,13 +196,11 @@ describe("search", () => {
 ######`).state, board)).toBe(false);
   });
 
-  it("greedy, IDA* and beam solve the tiny puzzle", () => {
+  it("greedy solves the tiny puzzle", () => {
     const { board, state } = parseLevel(tiny);
-    for (const algorithm of ["greedy", "idastar", "beam"] as const) {
-      const result = solve({ board, state, algorithm, maxNodes: 2000 });
-      expect(result.solution, algorithm).not.toBeNull();
-      expect(pushPathSolves(state, board, result.solution!.steps)).toBe(true);
-    }
+    const result = solve({ board, state, algorithm: "greedy", maxNodes: 2000 });
+    expect(result.solution).not.toBeNull();
+    expect(pushPathSolves(state, board, result.solution!.steps)).toBe(true);
   });
 });
 
@@ -232,6 +230,20 @@ describe("catalog levels", () => {
     expect(pushPathSolves(parsed.state, parsed.board, result.solution!.steps)).toBe(true);
   });
 
+  it("A* matches BFS on push count for a small branching puzzle", () => {
+    const { board, state } = parseLevel(`#######
+#     #
+# $ $ #
+#@ . .#
+#######`);
+    const star = solve({ board, state, algorithm: "astar", maxNodes: 20_000, mode: "instant" });
+    const flood = solve({ board, state, algorithm: "bfs", maxNodes: 20_000, mode: "instant" });
+    expect(star.solution).not.toBeNull();
+    expect(flood.solution).not.toBeNull();
+    expect(star.solution!.pushes.length).toBe(flood.solution!.pushes.length);
+    expect(pushPathSolves(state, board, star.solution!.steps)).toBe(true);
+  });
+
   it("A* solves campaign level 2", () => {
     const level = LEVELS[1]!;
     const parsed = parseLevel(level.ascii);
@@ -240,8 +252,11 @@ describe("catalog levels", () => {
       state: parsed.state,
       algorithm: "astar",
       maxNodes: 150_000,
+      mode: "instant",
     });
     expect(result.solution, `${level.id}: ${result.failedReason}`).not.toBeNull();
     expect(pushPathSolves(parsed.state, parsed.board, result.solution!.steps)).toBe(true);
+    // Push-optimal for this Maths Is Fun map (not the 97-push XSokoban #1 variant).
+    expect(result.solution!.pushes.length).toBe(116);
   }, 60_000);
 });

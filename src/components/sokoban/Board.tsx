@@ -4,6 +4,7 @@ import type { Board, SokobanState } from "@/engine/sokoban/types";
 import { Cell } from "@/components/sokoban/Cell";
 import { Box } from "@/components/sokoban/Box";
 import { Player } from "@/components/sokoban/Player";
+import { PathTrail, type TrailSegment } from "@/components/sokoban/PathTrail";
 import { useTrackedBoxes } from "@/components/sokoban/trackBoxes";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
@@ -14,9 +15,22 @@ type Props = {
   highlight?: number[];
   compact?: boolean;
   onCellClick?: (cell: number) => void;
+  trail?: TrailSegment[];
+  trailIndex?: number;
+  trailKeep?: number;
 };
 
-export function Board({ board, state, maxSize = 520, highlight = [], compact, onCellClick }: Props) {
+export function Board({
+  board,
+  state,
+  maxSize = 520,
+  highlight = [],
+  compact,
+  onCellClick,
+  trail,
+  trailIndex = 0,
+  trailKeep,
+}: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const frameRef = useRef<HTMLDivElement>(null);
   const [avail, setAvail] = useState(maxSize);
@@ -114,6 +128,16 @@ export function Board({ board, state, maxSize = 520, highlight = [], compact, on
           }),
         )}
       </div>
+      {trail && trail.length > 0 && (
+        <PathTrail
+          trail={trail}
+          index={trailIndex}
+          size={size}
+          width={board.width}
+          height={board.height}
+          keep={trailKeep}
+        />
+      )}
       {boxes.map((box) => {
         const pos = unpack(box.cell);
         return (

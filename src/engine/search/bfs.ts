@@ -16,24 +16,27 @@ export function bfs(
   heuristic: Heuristic,
   maxNodes: number,
   onProgress?: (progress: SearchProgress) => void,
+  maxEvents = 12_000,
 ): SolverResult {
-  const recorder = new SearchRecorder("bfs", heuristic.name);
+  const recorder = new SearchRecorder("bfs", heuristic.name, maxEvents);
   const t0 = performance.now();
   const root = makeNode(recorder, { state: start, board, heuristic, g: 0 });
   recorder.discovered(root);
   root.status = "frontier";
 
   const queue: string[] = [root.id];
+  let head = 0;
   const seen = new Set<string>([root.id]);
-  recorder.noteFrontier(queue.length);
+  recorder.noteFrontier(1);
 
-  while (queue.length > 0) {
-    const id = queue.shift()!;
+  while (head < queue.length) {
+    const id = queue[head]!;
+    head += 1;
     const node = recorder.get(id);
     if (!node) continue;
     const waiting: typeof node[] = [];
-    for (const queued of queue.slice(0, 4)) {
-      const queuedNode = recorder.get(queued);
+    for (let i = head; i < Math.min(queue.length, head + 4); i += 1) {
+      const queuedNode = recorder.get(queue[i]!);
       if (queuedNode) waiting.push(queuedNode);
     }
     recorder.evaluated(node, lowestFReason("bfs"), peekAlternatives(waiting));
@@ -63,7 +66,7 @@ export function bfs(
       recorder.discovered(child);
       queue.push(child.id);
     }
-    recorder.noteFrontier(queue.length);
+    recorder.noteFrontier(queue.length - head);
   }
 
   recorder.complete(performance.now() - t0);

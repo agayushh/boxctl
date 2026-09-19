@@ -62,12 +62,13 @@ export default function App() {
           <Landing
             onExplore={() => patch({ view: "lab", mode: "play" })}
             onWatch={() => patch({ view: "lab", mode: "watch" })}
+            onCompare={() => patch({ view: "lab", mode: "compare" })}
             onHow={() => patch({ view: "how" })}
           />
         </div>
       ) : state.view === "how" ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <HowItWorks onBack={() => patch({ view: "lab", mode: "play" })} />
+          <HowItWorks onBack={() => patch({ view: "lab", mode: "watch" })} />
         </div>
       ) : state.view === "editor" ? (
         <div className="min-h-0 flex-1 overflow-auto">

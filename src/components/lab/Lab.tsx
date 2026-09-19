@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { parseLevel } from "@/engine/sokoban/parser";
 import { useSokoban } from "@/hooks/useSokoban";
 import { useSolver } from "@/hooks/useSolver";
-import { usePlayback } from "@/hooks/usePlayback";
 import { useSolutionPlayback } from "@/hooks/useSolutionPlayback";
 import { SearchStage } from "@/components/lab/SearchStage";
+import { Compare } from "@/components/lab/Compare";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useProgress } from "@/hooks/useProgress";
 import { Board } from "@/components/sokoban/Board";
 import { LevelSelect } from "@/components/campaign/LevelSelect";
 import { LevelComplete } from "@/components/campaign/LevelComplete";
-import { CAMPAIGN_STATS, asDefinition, campaignAscii, levelByNumber, levels } from "@/levels";
-import { formatInt, formatMs } from "@/utils/statistics";
+import { asDefinition, campaignAscii, levelByNumber, levels } from "@/levels";
 import type { AlgorithmId } from "@/engine/search/types";
 import type { LevelDefinition } from "@/engine/sokoban/types";
 
@@ -54,37 +53,25 @@ export function Lab({
     parsed.state,
     algorithm,
     `${ascii}|${algorithm}`,
-    watching || mode === "compare",
+    watching,
+    { instant: true },
   );
-  const search = usePlayback(result, watching);
-  const route = useSolutionPlayback(parsed.state, result, false);
-  const [watchView, setWatchView] = useState<"search" | "path">("search");
+  const route = useSolutionPlayback(parsed.state, result?.solution?.steps, watching);
 
   useEffect(() => {
     setComplete(false);
-    setWatchView("search");
   }, [level.id, ascii, algorithm]);
 
   useEffect(() => {
-    if (!watching || !result?.solution) return;
-    if (watchView !== "search") return;
-    if (search.playing || search.eventCount === 0) return;
-    if (search.cursor < search.eventCount - 1) return;
-    setWatchView("path");
-  }, [watching, result, watchView, search.playing, search.cursor, search.eventCount]);
-
-  useEffect(() => {
-    if (watchView === "path") route.restart();
-    // Restart only when the watch phase changes, not on every route identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchView]);
-
-  useEffect(() => {
     if (mode === "play" && campaign && game.solved) {
-      markSolved(level.id, { pushes: game.pushes, moves: game.moves });
+      markSolved(level.id, {
+        pushes: game.pushes,
+        moves: game.moves,
+        steps: game.steps,
+      });
       setComplete(true);
     }
-  }, [game.solved, mode, campaign, game.pushes, game.moves, level.id, markSolved]);
+  }, [game.solved, mode, campaign, game.pushes, game.moves, game.steps, level.id, markSolved]);
 
   const go = (nextId: number) => {
     const next = levelByNumber(Math.min(60, Math.max(1, nextId)));
@@ -94,25 +81,15 @@ export function Lab({
   useKeyboard({
     enabled: !selector && !cinema,
     onMove: mode === "play" ? game.move : undefined,
-    onToggle: watching ? (watchView === "path" ? route.toggle : search.toggle) : undefined,
+    onToggle: watching ? route.toggle : undefined,
     onReset: () => {
       game.reset();
-      search.restart();
       route.restart();
     },
-    onNext: watching
-      ? watchView === "path"
-        ? route.next
-        : search.next
-      : () => go(level.id + 1),
-    onPrev: watching
-      ? watchView === "path"
-        ? route.prev
-        : search.prev
-      : () => go(level.id - 1),
+    onNext: watching ? route.next : () => go(level.id + 1),
+    onPrev: watching ? route.prev : () => go(level.id - 1),
   });
 
-  const ai = CAMPAIGN_STATS[level.id];
   const yours = progress.solved[level.id];
 
   return (
@@ -145,7 +122,6 @@ export function Lab({
               label="Restart"
               onClick={() => {
                 game.reset();
-                search.restart();
                 route.restart();
                 setComplete(false);
               }}
@@ -158,78 +134,32 @@ export function Lab({
       )}
 
       {mode === "compare" && !cinema ? (
-        <ComparePane
-          yours={yours}
+        <Compare board={parsed.board} start={parsed.state} ascii={ascii} yours={yours} />
+      ) : watching ? (
+        <SearchStage
+          board={parsed.board}
+          algorithm={algorithm}
+          onAlgorithm={onAlgorithm}
           result={result}
           status={status}
-          algorithm={algorithm}
-          cached={ai}
+          liveStats={searchProgress}
+          playing={route.playing}
+          speed={route.speed}
+          cursor={route.index}
+          eventCount={route.frames.length}
+          onToggle={route.toggle}
+          onRestart={route.restart}
+          onNext={route.next}
+          onPrev={route.prev}
+          onSpeed={route.setSpeed}
+          onSeek={route.setCursor}
+          cinema={cinema}
+          display={route.state}
+          frames={route.frames}
+          highlight={route.highlight}
+          trail={route.trail}
+          action={route.action}
         />
-      ) : watching ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {result?.solution && !cinema && (
-            <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-2 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-faint">Watch</p>
-              {(["search", "path"] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => {
-                    setWatchView(item);
-                    if (item === "search") search.restart();
-                  }}
-                  className={[
-                    "rounded-full px-3 py-1 text-xs",
-                    watchView === item ? "bg-text text-void" : "text-mute",
-                  ].join(" ")}
-                >
-                  {item === "search" ? "Search tree" : "Solution path"}
-                </button>
-              ))}
-            </div>
-          )}
-          <SearchStage
-            board={parsed.board}
-            start={parsed.state}
-            algorithm={algorithm}
-            onAlgorithm={onAlgorithm}
-            result={result}
-            status={status}
-            liveStats={searchProgress}
-            frame={search.frame}
-            playing={watchView === "path" ? route.playing : search.playing}
-            speed={watchView === "path" ? route.speed : search.speed}
-            cursor={watchView === "path" ? route.index : search.cursor}
-            eventCount={watchView === "path" ? route.frames.length : search.eventCount}
-            onToggle={watchView === "path" ? route.toggle : search.toggle}
-            onRestart={watchView === "path" ? route.restart : search.restart}
-            onNext={watchView === "path" ? route.next : search.next}
-            onPrev={watchView === "path" ? route.prev : search.prev}
-            onSpeed={watchView === "path" ? route.setSpeed : search.setSpeed}
-            onSeek={watchView === "path" ? route.setCursor : search.setCursor}
-            onSelectNode={() => undefined}
-            explain
-            cinema={cinema}
-            overrideState={watchView === "path" ? route.state : null}
-            focusId={
-              watchView === "path" && result?.solution
-                ? (result.solution.pathIds[route.index] ?? result.solution.nodeId)
-                : search.frame.currentId
-            }
-            highlight={watchView === "path" ? route.highlight : undefined}
-            subtitle={
-              status === "running"
-                ? `${algorithm === "astar" ? "A*" : algorithm.toUpperCase()} is expanding the graph${
-                    searchProgress ? ` · ${formatInt(searchProgress.statesExpanded)} states` : ""
-                  }`
-                : result?.solution
-                  ? watchView === "path"
-                    ? `Tracing the ${result.solution.pushes.length}-push route through the graph.`
-                    : `Found in ${result.solution.pushes.length} pushes. The gold line is the route.`
-                  : "No route inside this search budget — you can still play the level."
-            }
-          />
-        </div>
       ) : (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-auto p-4 sm:p-6">
           <Board board={parsed.board} state={game.state} maxSize={560} />
@@ -259,7 +189,7 @@ export function Lab({
           level={level.id}
           pushes={game.pushes}
           moves={game.moves}
-          aiPushes={result?.stats.solutionPushes ?? ai?.solutionPushes}
+          aiPushes={result?.stats.solutionPushes ?? undefined}
           onNext={() => {
             setComplete(false);
             go(level.id + 1);
@@ -267,6 +197,10 @@ export function Lab({
           onWatch={() => {
             setComplete(false);
             onMode("watch");
+          }}
+          onCompare={() => {
+            setComplete(false);
+            onMode("compare");
           }}
           onClose={() => setComplete(false)}
         />
@@ -284,58 +218,5 @@ function NavButton({ label, onClick }: { label: string; onClick: () => void }) {
     >
       {label}
     </button>
-  );
-}
-
-function ComparePane({
-  yours,
-  result,
-  status,
-  algorithm,
-  cached,
-}: {
-  yours?: { pushes: number; moves: number };
-  result: ReturnType<typeof useSolver>["result"];
-  status: string;
-  algorithm: AlgorithmId;
-  cached?: { solutionPushes?: number; solutionMoves?: number; statesExplored?: number; deadlocks?: number };
-}) {
-  const ai = result?.stats;
-  return (
-    <div className="mx-auto grid w-full max-w-3xl gap-8 p-6 md:grid-cols-2">
-      <section>
-        <h2 className="text-[11px] uppercase tracking-[0.18em] text-faint">Your solution</h2>
-        {yours ? (
-          <div className="mt-4 space-y-2 font-mono text-sm tabular">
-            <Row k="Pushes" v={formatInt(yours.pushes)} />
-            <Row k="Moves" v={formatInt(yours.moves)} />
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-mute">Play this level first to record your route.</p>
-        )}
-      </section>
-      <section>
-        <h2 className="text-[11px] uppercase tracking-[0.18em] text-faint">AI solution</h2>
-        {status === "running" ? (
-          <p className="mt-4 text-sm text-mute">Solving with {algorithm === "astar" ? "A*" : algorithm.toUpperCase()}…</p>
-        ) : null}
-        <div className="mt-4 space-y-2 font-mono text-sm tabular">
-          <Row k="Pushes" v={formatInt(ai?.solutionPushes ?? cached?.solutionPushes)} />
-          <Row k="Moves" v={formatInt(ai?.playerMoves ?? cached?.solutionMoves)} />
-          <Row k="States explored" v={formatInt(ai?.statesExpanded ?? cached?.statesExplored)} />
-          <Row k="Deadlocks" v={formatInt(ai?.deadlocksDetected ?? cached?.deadlocks)} />
-          {ai ? <Row k="Runtime" v={formatMs(ai.elapsedMs)} /> : null}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <p className="flex justify-between gap-4">
-      <span className="text-faint">{k}</span>
-      <span>{v}</span>
-    </p>
   );
 }
