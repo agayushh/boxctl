@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SokobanState } from "@/engine/sokoban/types";
-import type { SolutionStep, SolverResult } from "@/engine/search/types";
+import type { SearchProgress, SolutionStep, SolverResult } from "@/engine/search/types";
 
 export function replaySteps(start: SokobanState, steps: SolutionStep[]): SokobanState[] {
   const frames: SokobanState[] = [start];
@@ -30,20 +30,26 @@ const EMPTY_STEPS: SolutionStep[] = [];
 
 type PlaybackPace = "story" | "fast";
 
+/** Milliseconds between pushes. Floored so 8x still stays readable. */
+export function storyBeat(speed: number, pace: PlaybackPace = "story"): number {
+  const capped = Math.max(0.25, speed);
+  if (pace === "fast") return Math.max(280, 720 / capped);
+  return Math.max(550, 1300 / capped);
+}
+
 export function useSolutionPlayback(
   start: SokobanState,
   steps: SolutionStep[] | undefined,
   enabled: boolean,
   pace: PlaybackPace = "story",
-  loop = false,
 ) {
   const route = steps ?? EMPTY_STEPS;
-  const frames = useMemo(() => replaySteps(start, route), [start, route]);
-  const last = frames.length - 1;
   const routeKey =
     route.length === 0
       ? "empty"
       : `${route.length}:${route[0]!.action}:${route[0]!.pushedFrom}:${route[route.length - 1]!.pushedTo}`;
+  const frames = useMemo(() => replaySteps(start, route), [start, routeKey]);
+  const last = frames.length - 1;
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -55,12 +61,8 @@ export function useSolutionPlayback(
 
   useEffect(() => {
     if (!playing || last <= 0) return;
-    const beat = pace === "story" ? Math.max(280, 1100 / speed) : Math.max(90, 420 / speed);
+    const beat = storyBeat(speed, pace);
     if (index >= last) {
-      if (loop) {
-        const id = window.setTimeout(() => setIndex(0), beat);
-        return () => window.clearTimeout(id);
-      }
       setPlaying(false);
       return;
     }
@@ -68,7 +70,7 @@ export function useSolutionPlayback(
       setIndex((value) => Math.min(last, value + 1));
     }, beat);
     return () => window.clearTimeout(id);
-  }, [playing, index, speed, last, pace, loop]);
+  }, [playing, index, speed, last, pace]);
 
   const step = route[Math.max(0, index - 1)];
   const highlight = step ? [step.pushedFrom, step.pushedTo] : [];
@@ -113,6 +115,90 @@ export function useSolutionPlayback(
   };
 }
 
+export function useWatchPlayback(
+  start: SokobanState,
+  solutionSteps: SolutionStep[] | undefined,
+  live: SearchProgress | null,
+  searching: boolean,
+  enabled: boolean,
+  resetKey: string,
+) {
+  const solution = useSolutionPlayback(start, solutionSteps, enabled && !searching);
+  const [follow, setFollow] = useState(true);
+  const [shown, setShown] = useState<SearchProgress | null>(null);
+  const [speed, setSpeed] = useState(1);
+  const latest = useRef(live);
+  const lastPaint = useRef(0);
+  latest.current = live;
+
+  useEffect(() => {
+    setFollow(true);
+    setShown(null);
+    lastPaint.current = 0;
+  }, [resetKey]);
+
+  useEffect(() => {
+    if (!searching || !follow) return;
+    const paint = () => {
+      const snapshot = latest.current;
+      if (!snapshot) return;
+      lastPaint.current = performance.now();
+      setShown(snapshot);
+    };
+    if (!shown) {
+      paint();
+      return;
+    }
+    const wait = Math.max(0, storyBeat(speed) - (performance.now() - lastPaint.current));
+    const id = window.setTimeout(paint, wait);
+    return () => window.clearTimeout(id);
+  }, [searching, follow, live, speed, shown]);
+
+  if (!searching) {
+    return {
+      index: solution.index,
+      frames: solution.frames,
+      steps: solution.steps,
+      state: solution.state,
+      playing: solution.playing,
+      speed: solution.speed,
+      setSpeed: solution.setSpeed,
+      setCursor: solution.setCursor,
+      highlight: solution.highlight,
+      trail: solution.trail,
+      total: solution.total,
+      action: solution.action,
+      eventCount: solution.frames.length,
+      restart: solution.restart,
+      next: solution.next,
+      prev: solution.prev,
+      toggle: solution.toggle,
+    };
+  }
+
+  const current = shown?.state ?? start;
+  const lastStep = shown?.steps?.[Math.max(0, (shown.steps.length ?? 1) - 1)];
+  return {
+    index: 0,
+    frames: [current],
+    steps: EMPTY_STEPS,
+    state: current,
+    playing: follow,
+    speed,
+    setSpeed,
+    setCursor: () => setFollow(false),
+    highlight: lastStep ? [lastStep.pushedFrom, lastStep.pushedTo] : [],
+    trail: lastStep ? [{ from: lastStep.pushedFrom, to: lastStep.pushedTo }] : [],
+    total: 0,
+    action: lastStep?.action ?? shown?.action,
+    eventCount: 1,
+    restart: () => setFollow(true),
+    next: () => setFollow(false),
+    prev: () => setFollow(false),
+    toggle: () => setFollow((value) => !value),
+  };
+}
+
 export function useSharedClock(
   length: number,
   enabled: boolean,
@@ -132,7 +218,7 @@ export function useSharedClock(
 
   useEffect(() => {
     if (!playing || length <= 1) return;
-    const beat = Math.max(90, 420 / speed);
+    const beat = storyBeat(speed, "fast");
     if (index >= max) {
       if (loop) {
         const id = window.setTimeout(() => setIndex(0), beat);

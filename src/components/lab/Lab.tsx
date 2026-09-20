@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { parseLevel } from "@/engine/sokoban/parser";
 import { useSokoban } from "@/hooks/useSokoban";
 import { useSolver } from "@/hooks/useSolver";
-import { useSolutionPlayback } from "@/hooks/useSolutionPlayback";
+import { useWatchPlayback } from "@/hooks/useSolutionPlayback";
 import { SearchStage } from "@/components/lab/SearchStage";
 import { Compare } from "@/components/lab/Compare";
 import { PlayPad } from "@/components/lab/PlayPad";
@@ -49,15 +49,24 @@ export function Lab({
   const [complete, setComplete] = useState(false);
 
   const watching = cinema || mode === "watch";
+  const puzzleKey = `${ascii}|${algorithm}|watch`;
   const { result, status, progress: searchProgress } = useSolver(
     parsed.board,
     parsed.state,
     algorithm,
-    `${ascii}|${algorithm}|watch`,
+    puzzleKey,
     watching,
     { instant: true },
   );
-  const route = useSolutionPlayback(parsed.state, result?.solution?.steps, watching);
+  const searching = watching && status !== "done" && status !== "error";
+  const route = useWatchPlayback(
+    parsed.state,
+    result?.solution?.steps ?? (status === "done" ? searchProgress?.steps : undefined),
+    searchProgress,
+    searching,
+    watching,
+    puzzleKey,
+  );
 
   useEffect(() => {
     setComplete(false);
@@ -156,6 +165,7 @@ export function Lab({
           highlight={route.highlight}
           trail={route.trail}
           action={route.action}
+          steps={route.steps}
         />
       ) : (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-auto p-4 sm:p-6">

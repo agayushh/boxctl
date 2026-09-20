@@ -29,10 +29,18 @@ export function narrate(args: {
   const name = NAMES[args.algorithm] ?? "A*";
 
   if (args.searching) {
+    if (args.g > 0) {
+      return {
+        kicker: `${name} · searching`,
+        title: `Walking a ${args.g}-push path.`,
+        body: `This snapshot is what the search is expanding. Grey boards are the legal next pushes. g = ${args.g}, h = ${args.h}, f = ${args.f}.`,
+        focus: "graph",
+      };
+    }
     return {
       kicker: name,
       title: "Finding a gold path.",
-      body: "Grey boards are legal next pushes. Gold will be the ones this algorithm keeps.",
+      body: "The board will change slowly as the search expands states. Grey boards are legal next pushes.",
       focus: "graph",
     };
   }
@@ -46,11 +54,20 @@ export function narrate(args: {
     };
   }
 
-  if (args.solved || args.index >= args.total - 1) {
+  if (args.solved) {
     return {
       kicker: "Solved",
-      title: `${args.total - 1} gold pushes.`,
+      title: `${Math.max(0, args.total - 1)} gold pushes.`,
       body: "Follow the gold chain from start to here. That walk is the solution.",
+      focus: "graph",
+    };
+  }
+
+  if (args.index >= args.total - 1) {
+    return {
+      kicker: name,
+      title: `${Math.max(0, args.total - 1)} pushes before the limit.`,
+      body: "Search stopped before a full solution. Replay this walk, switch algorithm, or solve it yourself in Play.",
       focus: "graph",
     };
   }

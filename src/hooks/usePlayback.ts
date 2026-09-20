@@ -17,6 +17,7 @@ const EMPTY_STATS: SearchStats = {
 };
 
 export const SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+export const WATCH_SPEEDS = [0.5, 1, 2] as const;
 
 const KEYFRAME: Set<SearchEvent["type"]> = new Set([
   "STATE_EVALUATED",

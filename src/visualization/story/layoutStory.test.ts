@@ -68,5 +68,19 @@ describe("narrate", () => {
       f: 6,
     });
     expect(second.title).toContain("A*");
+
+    const hunting = narrate({
+      algorithm: "astar",
+      index: 4,
+      total: 1,
+      frontierCount: 3,
+      searching: true,
+      solved: false,
+      g: 4,
+      h: 8,
+      f: 12,
+    });
+    expect(hunting.title).toContain("4-push");
+    expect(hunting.body).toContain("expanding");
   });
 });

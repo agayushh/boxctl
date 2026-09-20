@@ -7,10 +7,12 @@ import { isSolved } from "@/engine/sokoban/goals";
 import { formatInt, formatMs } from "@/utils/statistics";
 import { ACTION_GLYPH } from "@/utils/coordinates";
 import type { Action } from "@/utils/coordinates";
-import type { AlgorithmId, SearchProgress, SolverResult } from "@/engine/search/types";
+import type { AlgorithmId, SearchProgress, SolutionStep, SolverResult } from "@/engine/search/types";
 import type { Board as SokobanBoard, SokobanState } from "@/engine/sokoban/types";
 import type { TrailSegment } from "@/components/sokoban/PathTrail";
 import { useMemo } from "react";
+
+const EMPTY_STEPS: SolutionStep[] = [];
 
 type Props = {
   board: SokobanBoard;
@@ -35,11 +37,12 @@ type Props = {
   trail?: TrailSegment[];
   liveStats?: SearchProgress | null;
   action?: Action;
+  steps?: SolutionStep[];
 };
 
 export function SearchStage(props: Props) {
-  const live = props.status === "idle" || props.status === "running";
-  const steps = props.result?.solution?.steps ?? [];
+  const searching = props.status === "idle" || props.status === "running";
+  const steps = props.steps ?? props.result?.solution?.steps ?? EMPTY_STEPS;
   const pushes = props.result?.solution?.pushes.length;
   const stats = props.result?.stats;
   const glyph = props.action ? ACTION_GLYPH[props.action] : "";
@@ -54,11 +57,11 @@ export function SearchStage(props: Props) {
     index: props.cursor,
     total: props.frames.length,
     frontierCount: story.frontierCount,
-    searching: live,
-    solved: !live && solved,
-    g: current?.g ?? props.cursor,
-    h: current?.h ?? 0,
-    f: current?.f ?? 0,
+    searching,
+    solved: !searching && solved,
+    g: (searching ? props.liveStats?.g : current?.g) ?? props.cursor,
+    h: (searching ? props.liveStats?.h : current?.h) ?? 0,
+    f: (searching ? props.liveStats?.f : current?.f) ?? 0,
   });
 
   return (
@@ -67,24 +70,26 @@ export function SearchStage(props: Props) {
         <section className="relative flex min-h-0 flex-col justify-center border-b border-line p-4 sm:p-6 lg:border-b-0 lg:border-r">
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
             {copy.kicker}
-            {pushes != null && !live ? ` · ${pushes} pushes` : ""}
+            {pushes != null && !searching ? ` · ${pushes} pushes` : ""}
+            {searching && props.liveStats?.g ? ` · push ${props.liveStats.g}` : ""}
             {glyph ? ` · ${glyph}` : ""}
           </p>
           <Board
             board={props.board}
             state={props.display}
             maxSize={props.cinema ? 520 : 420}
-            highlight={live ? undefined : props.highlight}
-            trail={live ? undefined : props.trail}
+            highlight={props.highlight}
+            trail={props.trail}
             trailIndex={props.cursor}
             trailKeep={18}
           />
           <div className="mt-5 max-w-lg">
             <h2 className="font-serif text-xl tracking-tight text-text sm:text-2xl">{copy.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-mute">{copy.body}</p>
-            {live && props.liveStats ? (
+            {searching && props.liveStats ? (
               <p className="mt-2 font-mono text-[11px] tabular text-faint">
                 {formatInt(props.liveStats.statesExpanded)} states so far
+                {props.liveStats.elapsedMs != null ? ` · ${formatMs(props.liveStats.elapsedMs)}` : ""}
               </p>
             ) : null}
           </div>
@@ -96,7 +101,7 @@ export function SearchStage(props: Props) {
             steps={steps}
             index={props.cursor}
             algorithm={props.algorithm}
-            onSelect={live ? undefined : props.onSeek}
+            onSelect={props.onSeek}
             compact={props.cinema}
           />
         </section>
@@ -115,12 +120,13 @@ export function SearchStage(props: Props) {
           onPrev={props.onPrev}
           onSpeed={props.onSpeed}
           onSeek={props.onSeek}
-          loading={live}
+          loading={searching}
         />
-        {stats && !live && (
+        {stats && !searching && (
           <p className="mt-3 font-mono text-[11px] tabular text-faint">
             {formatInt(stats.statesExpanded)} states searched · {formatMs(stats.elapsedMs)}
             {stats.playerMoves != null ? ` · ${formatInt(stats.playerMoves)} steps` : ""}
+            {props.result?.failedReason ? ` · ${props.result.failedReason}` : ""}
           </p>
         )}
       </div>

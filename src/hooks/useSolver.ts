@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AlgorithmId, SearchProgress, SolverResult } from "@/engine/search/types";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
 import { solve, nodesFor } from "@/engine/search/solver";
-import { serializeBoard, serializeState } from "@/engine/search/serialize";
+import { serializeBoard, serializeState, reviveProgress } from "@/engine/search/serialize";
 import type { WorkerIn, WorkerOut } from "@/engine/search/serialize";
 
 type Status = "idle" | "running" | "done" | "error";
@@ -60,7 +60,6 @@ export function useSolver(
     const finish = (next: SolverResult) => {
       if (requestId !== requestRef.current) return;
       setResult(next);
-      setProgress(null);
       setStatus("done");
     };
     const fail = (message: string) => {
@@ -78,7 +77,7 @@ export function useSolver(
       const onMessage = (event: MessageEvent<WorkerOut>) => {
         if (event.data.requestId !== requestId) return;
         if (event.data.progress) {
-          setProgress(event.data.progress);
+          setProgress(reviveProgress(event.data.progress));
           return;
         }
         if (event.data.result) finish(event.data.result);

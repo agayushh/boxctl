@@ -12,6 +12,8 @@ type Props = {
   onPrev: () => void;
   onSpeed: (value: number) => void;
   onSeek: (value: number) => void;
+  speeds?: readonly number[];
+  timelineLabel?: string;
 };
 
 export function PlaybackControls({
@@ -25,6 +27,8 @@ export function PlaybackControls({
   onPrev,
   onSpeed,
   onSeek,
+  speeds = SPEEDS,
+  timelineLabel = "Timeline",
 }: Props) {
   const max = Math.max(0, eventCount - 1);
   return (
@@ -43,7 +47,7 @@ export function PlaybackControls({
           Restart
         </IconButton>
         <div className="ml-auto flex flex-wrap gap-1">
-          {SPEEDS.map((value) => (
+          {speeds.map((value) => (
             <button
               key={value}
               type="button"
@@ -59,26 +63,29 @@ export function PlaybackControls({
           ))}
         </div>
       </div>
-      <label className="block">
-        <span className="mb-1 flex justify-between text-[11px] text-mute">
-          <span>Timeline</span>
-          <span className="tabular">
-            {formatInt(eventCount === 0 ? 0 : cursor + 1)} / {formatInt(eventCount)}
+      {eventCount > 1 ? (
+        <label className="block">
+          <span className="mb-1 flex justify-between text-[11px] text-mute">
+            <span>{timelineLabel}</span>
+            <span className="tabular">
+              {formatInt(cursor + 1)} / {formatInt(eventCount)}
+            </span>
           </span>
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={max}
-          step={1}
-          value={Math.min(cursor, max)}
-          disabled={eventCount <= 1}
-          onInput={(event) => onSeek(Number(event.currentTarget.value))}
-          onChange={(event) => onSeek(Number(event.currentTarget.value))}
-          className="timeline-slider w-full"
-          aria-label="Solution timeline"
-        />
-      </label>
+          <input
+            type="range"
+            min={0}
+            max={max}
+            step={1}
+            value={Math.min(cursor, max)}
+            onInput={(event) => onSeek(Number(event.currentTarget.value))}
+            onChange={(event) => onSeek(Number(event.currentTarget.value))}
+            className="timeline-slider w-full"
+            aria-label="Solution timeline"
+          />
+        </label>
+      ) : (
+        <p className="text-[11px] text-faint">{timelineLabel} waits for a path to replay.</p>
+      )}
     </div>
   );
 }
