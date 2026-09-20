@@ -52,7 +52,7 @@ export function Lab({
     parsed.board,
     parsed.state,
     algorithm,
-    `${ascii}|${algorithm}`,
+    `${ascii}|${algorithm}|watch`,
     watching,
     { instant: true },
   );
@@ -80,7 +80,15 @@ export function Lab({
 
   useKeyboard({
     enabled: !selector && !cinema,
-    onMove: mode === "play" ? game.move : undefined,
+    onMove:
+      mode === "play"
+        ? game.move
+        : watching
+          ? (action) => {
+              if (action === "LEFT" || action === "UP") route.prev();
+              else route.next();
+            }
+          : undefined,
     onToggle: watching ? route.toggle : undefined,
     onReset: () => {
       game.reset();

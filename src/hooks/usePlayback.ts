@@ -74,6 +74,11 @@ export function usePlayback(result: SolverResult | null, autoplay = true) {
     return applyEvents(result.events, result.nodes, result.stats, result.solution, eventIndex);
   }, [result, cursor, frames]);
 
+  const seek = (value: number) => {
+    setPlaying(false);
+    setCursor(Math.max(0, Math.min(Math.max(0, eventCount - 1), value)));
+  };
+
   const restart = () => {
     setCursor(0);
     setPlaying(true);
@@ -99,7 +104,7 @@ export function usePlayback(result: SolverResult | null, autoplay = true) {
 
   return {
     cursor,
-    setCursor,
+    setCursor: seek,
     playing,
     setPlaying,
     speed,
