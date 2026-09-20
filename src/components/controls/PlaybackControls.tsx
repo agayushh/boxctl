@@ -14,6 +14,7 @@ type Props = {
   onSeek: (value: number) => void;
   speeds?: readonly number[];
   timelineLabel?: string;
+  disabled?: boolean;
 };
 
 export function PlaybackControls({
@@ -29,21 +30,23 @@ export function PlaybackControls({
   onSeek,
   speeds = SPEEDS,
   timelineLabel = "Timeline",
+  disabled = false,
 }: Props) {
   const max = Math.max(0, eventCount - 1);
+  const canPlay = !disabled && eventCount > 1;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <IconButton label={playing ? "Pause" : "Play"} onClick={onToggle}>
+        <IconButton label={playing ? "Pause" : "Play"} onClick={onToggle} disabled={!canPlay}>
           {playing ? "Pause" : "Play"}
         </IconButton>
-        <IconButton label="Previous push" onClick={onPrev}>
+        <IconButton label="Previous push" onClick={onPrev} disabled={!canPlay}>
           Prev
         </IconButton>
-        <IconButton label="Next push" onClick={onNext}>
+        <IconButton label="Next push" onClick={onNext} disabled={!canPlay}>
           Next
         </IconButton>
-        <IconButton label="Restart route" onClick={onRestart}>
+        <IconButton label="Restart route" onClick={onRestart} disabled={!canPlay}>
           Restart
         </IconButton>
         <div className="ml-auto flex flex-wrap gap-1">
@@ -94,17 +97,25 @@ function IconButton({
   label,
   onClick,
   children,
+  disabled,
 }: {
   label: string;
   onClick: () => void;
   children: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
-      className="rounded-full border border-line px-3 py-1 text-xs text-mute hover:border-line-strong hover:text-text"
+      className={[
+        "rounded-full border px-3 py-1 text-xs",
+        disabled
+          ? "cursor-not-allowed border-line text-faint"
+          : "border-line text-mute hover:border-line-strong hover:text-text",
+      ].join(" ")}
     >
       {children}
     </button>

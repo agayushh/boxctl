@@ -17,6 +17,8 @@ import type { LevelDefinition } from "@/engine/sokoban/types";
 
 export type PlayMode = "play" | "watch" | "compare";
 
+const INSTANT = { instant: true as const };
+
 type Props = {
   levelId: string;
   ascii?: string | null;
@@ -50,23 +52,41 @@ export function Lab({
 
   const watching = cinema || mode === "watch";
   const puzzleKey = `${ascii}|${algorithm}|watch`;
-  const { result, status, progress: searchProgress } = useSolver(
+  const greedyFirst = watching && algorithm !== "greedy";
+  const fallback = useSolver(
+    parsed.board,
+    parsed.state,
+    "greedy",
+    `${ascii}|greedy|watch-fallback`,
+    greedyFirst,
+    INSTANT,
+  );
+  const greedyHasRoute =
+    !greedyFirst ||
+    fallback.status === "done" ||
+    fallback.status === "error" ||
+    (fallback.result?.solution?.steps.length ?? 0) > 0 ||
+    (fallback.progress?.steps?.length ?? 0) >= 8;
+  const primary = useSolver(
     parsed.board,
     parsed.state,
     algorithm,
     puzzleKey,
-    watching,
-    { instant: true },
+    watching && greedyHasRoute,
+    INSTANT,
   );
-  const searching = watching && status !== "done" && status !== "error";
-  const route = useWatchPlayback(
-    parsed.state,
-    result?.solution?.steps ?? (status === "done" ? searchProgress?.steps : undefined),
-    searchProgress,
-    searching,
-    watching,
-    puzzleKey,
-  );
+  const path =
+    primary.result?.solution ??
+    fallback.result?.solution ??
+    null;
+  const pathSource = primary.result?.solution ? algorithm : path ? "greedy" : algorithm;
+  const pathResult = primary.result?.solution ? primary.result : fallback.result;
+  const live =
+    (primary.progress?.steps?.length ?? 0) >= (fallback.progress?.steps?.length ?? 0)
+      ? primary.progress
+      : fallback.progress;
+  const route = useWatchPlayback(parsed.state, path?.steps, live, watching, puzzleKey);
+  const playable = route.frames.length > 1;
 
   useEffect(() => {
     setComplete(false);
@@ -144,11 +164,13 @@ export function Lab({
       ) : watching ? (
         <SearchStage
           board={parsed.board}
-          algorithm={algorithm}
+          algorithm={pathSource}
+          requestedAlgorithm={algorithm}
           onAlgorithm={onAlgorithm}
-          result={result}
-          status={status}
-          liveStats={searchProgress}
+          result={pathResult}
+          status={playable ? "done" : primary.status}
+          liveStats={live}
+          awaiting={!playable}
           playing={route.playing}
           speed={route.speed}
           cursor={route.index}
@@ -206,7 +228,7 @@ export function Lab({
           level={level.id}
           pushes={game.pushes}
           moves={game.moves}
-          aiPushes={result?.stats.solutionPushes ?? undefined}
+          aiPushes={pathResult?.stats.solutionPushes ?? undefined}
           onNext={() => {
             setComplete(false);
             go(level.id + 1);

@@ -17,17 +17,16 @@ type Props = {
   onSpeed: (value: number) => void;
   onSeek: (value: number) => void;
   loading?: boolean;
+  ready?: boolean;
 };
 
 export function SolverControls(props: Props) {
+  const ready = props.ready ?? props.eventCount > 1;
   return (
     <div className="flex flex-col gap-4">
       <AlgorithmSelector value={props.algorithm} onChange={props.onAlgorithm} />
-      {props.loading ? (
-        <p className="text-xs text-mute">
-          Searching… the board updates one snapshot at a time. Play pauses. The timeline starts
-          after a path is found and plays through once.
-        </p>
+      {props.loading && !ready ? (
+        <p className="text-xs text-mute">Finding a gold path to play…</p>
       ) : null}
       <PlaybackControls
         playing={props.playing}
@@ -42,6 +41,7 @@ export function SolverControls(props: Props) {
         onSeek={props.onSeek}
         speeds={WATCH_SPEEDS}
         timelineLabel="Solution"
+        disabled={!ready}
       />
     </div>
   );

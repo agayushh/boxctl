@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { replaySteps, storyBeat } from "@/hooks/useSolutionPlayback";
+import { pickWatchSteps, replaySteps, storyBeat } from "@/hooks/useSolutionPlayback";
 
 describe("replaySteps", () => {
   it("replays only the recorded pushes", () => {
@@ -20,5 +20,27 @@ describe("storyBeat", () => {
     expect(storyBeat(1)).toBeGreaterThanOrEqual(1200);
     expect(storyBeat(8)).toBeGreaterThanOrEqual(550);
     expect(storyBeat(8)).toBeLessThan(storyBeat(1));
+  });
+});
+
+describe("pickWatchSteps", () => {
+  const step = (to: number): { action: "LEFT"; pushedFrom: number; pushedTo: number; playerWalks: number } => ({
+    action: "LEFT",
+    pushedFrom: to + 1,
+    pushedTo: to,
+    playerWalks: 1,
+  });
+
+  it("freezes the first useful live path and later prefers a finished solution", () => {
+    const live = [step(9), step(8)];
+    expect(pickWatchSteps(undefined, undefined, live, 0)).toBeUndefined();
+    expect(pickWatchSteps(undefined, undefined, live, 1500)).toEqual(live);
+
+    const frozen = Array.from({ length: 8 }, (_, i) => step(20 - i));
+    const laterLive = [...frozen, step(11)];
+    expect(pickWatchSteps(undefined, frozen, laterLive, 4000)).toBe(frozen);
+
+    const solution = Array.from({ length: 12 }, (_, i) => step(30 - i));
+    expect(pickWatchSteps(solution, frozen, laterLive, 4000)).toBe(solution);
   });
 });

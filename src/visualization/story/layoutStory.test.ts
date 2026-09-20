@@ -80,7 +80,7 @@ describe("narrate", () => {
       h: 8,
       f: 12,
     });
-    expect(hunting.title).toContain("4-push");
-    expect(hunting.body).toContain("expanding");
+    expect(hunting.title).toContain("Finding a gold path");
+    expect(hunting.body.toLowerCase()).toContain("gold");
   });
 });

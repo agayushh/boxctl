@@ -37,6 +37,54 @@ export function storyBeat(speed: number, pace: PlaybackPace = "story"): number {
   return Math.max(550, 1300 / capped);
 }
 
+/** Keep one walkable route. Prefer a finished solution; otherwise freeze the first useful live path. */
+export function pickWatchSteps(
+  solution: SolutionStep[] | undefined,
+  frozen: SolutionStep[] | undefined,
+  live: SolutionStep[] | undefined,
+  liveElapsedMs = 0,
+): SolutionStep[] | undefined {
+  if (solution && solution.length > 0) return solution;
+  if (frozen && frozen.length > 0) return frozen;
+  if (!live || live.length === 0) return undefined;
+  if (live.length >= 8 || liveElapsedMs >= 1200) return live;
+  return undefined;
+}
+
+export function useWatchPlayback(
+  start: SokobanState,
+  solutionSteps: SolutionStep[] | undefined,
+  live: SearchProgress | null | undefined,
+  enabled: boolean,
+  resetKey: string,
+) {
+  const [frozen, setFrozen] = useState<SolutionStep[] | undefined>();
+  const keyRef = useRef(resetKey);
+  const liveSteps = live?.steps;
+  const liveElapsed = live?.elapsedMs ?? 0;
+
+  useEffect(() => {
+    const reset = keyRef.current !== resetKey;
+    keyRef.current = resetKey;
+    setFrozen((prev) => {
+      const next = pickWatchSteps(solutionSteps, reset ? undefined : prev, liveSteps, liveElapsed);
+      if (next === prev) return prev;
+      if (
+        prev &&
+        next &&
+        prev.length === next.length &&
+        prev[0]?.pushedFrom === next[0]?.pushedFrom &&
+        prev[prev.length - 1]?.pushedTo === next[next.length - 1]?.pushedTo
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [resetKey, solutionSteps, liveSteps, liveElapsed]);
+
+  return useSolutionPlayback(start, frozen, enabled && (frozen?.length ?? 0) > 0);
+}
+
 export function useSolutionPlayback(
   start: SokobanState,
   steps: SolutionStep[] | undefined,
@@ -57,7 +105,7 @@ export function useSolutionPlayback(
   useEffect(() => {
     setIndex(0);
     setPlaying(enabled && route.length > 0);
-  }, [enabled, routeKey, route.length]);
+  }, [enabled, routeKey]);
 
   useEffect(() => {
     if (!playing || last <= 0) return;
@@ -112,90 +160,6 @@ export function useSolutionPlayback(
       }
       setPlaying((value) => !value);
     },
-  };
-}
-
-export function useWatchPlayback(
-  start: SokobanState,
-  solutionSteps: SolutionStep[] | undefined,
-  live: SearchProgress | null,
-  searching: boolean,
-  enabled: boolean,
-  resetKey: string,
-) {
-  const solution = useSolutionPlayback(start, solutionSteps, enabled && !searching);
-  const [follow, setFollow] = useState(true);
-  const [shown, setShown] = useState<SearchProgress | null>(null);
-  const [speed, setSpeed] = useState(1);
-  const latest = useRef(live);
-  const lastPaint = useRef(0);
-  latest.current = live;
-
-  useEffect(() => {
-    setFollow(true);
-    setShown(null);
-    lastPaint.current = 0;
-  }, [resetKey]);
-
-  useEffect(() => {
-    if (!searching || !follow) return;
-    const paint = () => {
-      const snapshot = latest.current;
-      if (!snapshot) return;
-      lastPaint.current = performance.now();
-      setShown(snapshot);
-    };
-    if (!shown) {
-      paint();
-      return;
-    }
-    const wait = Math.max(0, storyBeat(speed) - (performance.now() - lastPaint.current));
-    const id = window.setTimeout(paint, wait);
-    return () => window.clearTimeout(id);
-  }, [searching, follow, live, speed, shown]);
-
-  if (!searching) {
-    return {
-      index: solution.index,
-      frames: solution.frames,
-      steps: solution.steps,
-      state: solution.state,
-      playing: solution.playing,
-      speed: solution.speed,
-      setSpeed: solution.setSpeed,
-      setCursor: solution.setCursor,
-      highlight: solution.highlight,
-      trail: solution.trail,
-      total: solution.total,
-      action: solution.action,
-      eventCount: solution.frames.length,
-      restart: solution.restart,
-      next: solution.next,
-      prev: solution.prev,
-      toggle: solution.toggle,
-    };
-  }
-
-  const current = shown?.state ?? start;
-  const lastStep = shown?.steps?.[Math.max(0, (shown.steps.length ?? 1) - 1)];
-  return {
-    index: 0,
-    frames: [current],
-    steps: EMPTY_STEPS,
-    state: current,
-    playing: follow,
-    speed,
-    setSpeed,
-    setCursor: () => setFollow(false),
-    highlight: lastStep ? [lastStep.pushedFrom, lastStep.pushedTo] : [],
-    trail: lastStep ? [{ from: lastStep.pushedFrom, to: lastStep.pushedTo }] : [],
-    total: 0,
-    action: lastStep?.action ?? shown?.action,
-    eventCount: 1,
-    restart: () => setFollow(true),
-    next: () => setFollow(false),
-    prev: () => setFollow(false),
-    toggle: () => setFollow((value) => !value),
   };
 }
 

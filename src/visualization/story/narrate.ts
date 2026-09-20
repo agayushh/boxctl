@@ -29,18 +29,10 @@ export function narrate(args: {
   const name = NAMES[args.algorithm] ?? "A*";
 
   if (args.searching) {
-    if (args.g > 0) {
-      return {
-        kicker: `${name} · searching`,
-        title: `Walking a ${args.g}-push path.`,
-        body: `This snapshot is what the search is expanding. Grey boards are the legal next pushes. g = ${args.g}, h = ${args.h}, f = ${args.f}.`,
-        focus: "graph",
-      };
-    }
     return {
       kicker: name,
       title: "Finding a gold path.",
-      body: "The board will change slowly as the search expands states. Grey boards are legal next pushes.",
+      body: "Grey boards are legal next pushes. Gold will be the ones this algorithm keeps.",
       focus: "graph",
     };
   }

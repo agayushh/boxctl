@@ -13,10 +13,18 @@ import type { TrailSegment } from "@/components/sokoban/PathTrail";
 import { useMemo } from "react";
 
 const EMPTY_STEPS: SolutionStep[] = [];
+const NAMES: Record<AlgorithmId, string> = {
+  astar: "A*",
+  bfs: "BFS",
+  greedy: "Greedy",
+  idastar: "A*",
+  beam: "A*",
+};
 
 type Props = {
   board: SokobanBoard;
   algorithm: AlgorithmId;
+  requestedAlgorithm?: AlgorithmId;
   onAlgorithm: (id: AlgorithmId) => void;
   result: SolverResult | null;
   status: string;
@@ -38,15 +46,18 @@ type Props = {
   liveStats?: SearchProgress | null;
   action?: Action;
   steps?: SolutionStep[];
+  awaiting?: boolean;
 };
 
 export function SearchStage(props: Props) {
-  const searching = props.status === "idle" || props.status === "running";
+  const awaiting =
+    props.awaiting ?? (props.status === "idle" || props.status === "running");
   const steps = props.steps ?? props.result?.solution?.steps ?? EMPTY_STEPS;
   const pushes = props.result?.solution?.pushes.length;
   const stats = props.result?.stats;
   const glyph = props.action ? ACTION_GLYPH[props.action] : "";
   const solved = isSolved(props.display, props.board);
+  const requested = props.requestedAlgorithm ?? props.algorithm;
   const story = useMemo(
     () => layoutStory(props.board, props.frames, steps, props.cursor, props.algorithm),
     [props.board, props.frames, steps, props.cursor, props.algorithm],
@@ -57,12 +68,16 @@ export function SearchStage(props: Props) {
     index: props.cursor,
     total: props.frames.length,
     frontierCount: story.frontierCount,
-    searching,
-    solved: !searching && solved,
-    g: (searching ? props.liveStats?.g : current?.g) ?? props.cursor,
-    h: (searching ? props.liveStats?.h : current?.h) ?? 0,
-    f: (searching ? props.liveStats?.f : current?.f) ?? 0,
+    searching: awaiting,
+    solved: !awaiting && solved,
+    g: current?.g ?? props.cursor,
+    h: current?.h ?? 0,
+    f: current?.f ?? 0,
   });
+  const fallback =
+    !awaiting && requested !== props.algorithm
+      ? `Playing ${NAMES[props.algorithm]}’s path while ${NAMES[requested]} keeps looking for a shorter one.`
+      : null;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -70,8 +85,7 @@ export function SearchStage(props: Props) {
         <section className="relative flex min-h-0 flex-col justify-center border-b border-line p-4 sm:p-6 lg:border-b-0 lg:border-r">
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
             {copy.kicker}
-            {pushes != null && !searching ? ` · ${pushes} pushes` : ""}
-            {searching && props.liveStats?.g ? ` · push ${props.liveStats.g}` : ""}
+            {pushes != null && !awaiting ? ` · ${pushes} pushes` : ""}
             {glyph ? ` · ${glyph}` : ""}
           </p>
           <Board
@@ -86,7 +100,8 @@ export function SearchStage(props: Props) {
           <div className="mt-5 max-w-lg">
             <h2 className="font-serif text-xl tracking-tight text-text sm:text-2xl">{copy.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-mute">{copy.body}</p>
-            {searching && props.liveStats ? (
+            {fallback ? <p className="mt-2 text-sm text-gold">{fallback}</p> : null}
+            {awaiting && props.liveStats ? (
               <p className="mt-2 font-mono text-[11px] tabular text-faint">
                 {formatInt(props.liveStats.statesExpanded)} states so far
                 {props.liveStats.elapsedMs != null ? ` · ${formatMs(props.liveStats.elapsedMs)}` : ""}
@@ -108,7 +123,7 @@ export function SearchStage(props: Props) {
       </div>
       <div className={["shrink-0 border-t border-line", props.cinema ? "bg-void px-6 py-3" : "p-4 sm:px-6 sm:py-3"].join(" ")}>
         <SolverControls
-          algorithm={props.algorithm}
+          algorithm={requested}
           onAlgorithm={props.onAlgorithm}
           playing={props.playing}
           speed={props.speed}
@@ -120,9 +135,10 @@ export function SearchStage(props: Props) {
           onPrev={props.onPrev}
           onSpeed={props.onSpeed}
           onSeek={props.onSeek}
-          loading={searching}
+          loading={awaiting}
+          ready={props.eventCount > 1}
         />
-        {stats && !searching && (
+        {stats && !awaiting && (
           <p className="mt-3 font-mono text-[11px] tabular text-faint">
             {formatInt(stats.statesExpanded)} states searched · {formatMs(stats.elapsedMs)}
             {stats.playerMoves != null ? ` · ${formatInt(stats.playerMoves)} steps` : ""}
