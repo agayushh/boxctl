@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { pack } from "@/utils/coordinates";
 import { hashState, statesEqual } from "@/utils/hashing";
 import { parseLevel, stringifyLevel } from "@/engine/sokoban/parser";
-import { tryMove, generatePushes, pushPathSolves, reachablePlayerCells } from "@/engine/sokoban/moves";
+import { tryMove, generatePushes, pushPathSolves, reachablePlayerCells, walkActions } from "@/engine/sokoban/moves";
 import { detectCornerDeadlock, detectDeadlock, detectWallDeadlock } from "@/engine/sokoban/deadlocks";
 import { isSolved } from "@/engine/sokoban/goals";
 import { validateLevel } from "@/engine/sokoban/validator";
@@ -43,6 +43,15 @@ describe("movement", () => {
     const move = tryMove(state, board, "RIGHT");
     expect(move.valid).toBe(true);
     expect(move.state?.player).toBe(pack(2, 1));
+  });
+
+  it("finds a walk around boxes", () => {
+    const { board, state } = parseLevel(`#####
+#@ $#
+#   #
+#####`);
+    const path = walkActions(state, board, pack(3, 2));
+    expect(path).toEqual(["DOWN", "RIGHT", "RIGHT"]);
   });
 
   it("pushes a box onto a goal", () => {

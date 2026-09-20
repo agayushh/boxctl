@@ -1,27 +1,27 @@
-import type { ViewId } from "@/hooks/useUrlState";
+export type NavId = "play" | "watch" | "compare" | "how" | "editor" | "landing" | "cinema";
 
 type Props = {
-  view: ViewId;
-  onView: (view: ViewId) => void;
+  nav: NavId;
+  onNav: (nav: NavId) => void;
   onShare: () => void;
   cinema?: boolean;
 };
 
-const LINKS: Array<{ id: ViewId; label: string }> = [
-  { id: "lab", label: "Watch" },
+const LINKS: Array<{ id: NavId; label: string }> = [
+  { id: "play", label: "Play" },
+  { id: "watch", label: "Watch" },
   { id: "compare", label: "Compare" },
-  { id: "editor", label: "Editor" },
-  { id: "how", label: "How it works" },
+  { id: "how", label: "Guide" },
 ];
 
-export function Header({ view, onView, onShare, cinema }: Props) {
+export function Header({ nav, onNav, onShare, cinema }: Props) {
   if (cinema) {
     return (
       <header className="flex items-center justify-between px-4 py-3">
         <p className="text-[11px] uppercase tracking-[0.22em] text-faint">Heuristic</p>
         <button
           type="button"
-          onClick={() => onView("lab")}
+          onClick={() => onNav("watch")}
           className="text-xs text-mute hover:text-text"
         >
           Exit cinema
@@ -31,36 +31,39 @@ export function Header({ view, onView, onShare, cinema }: Props) {
   }
 
   return (
-    <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-6">
+    <header className="flex shrink-0 items-center gap-3 border-b border-line px-4 py-2.5 sm:px-6">
       <button
         type="button"
-        onClick={() => onView("landing")}
+        onClick={() => onNav("landing")}
         className="font-serif text-xl tracking-tight text-text"
       >
         Heuristic
       </button>
-      <nav className="flex flex-wrap items-center gap-1" aria-label="Primary">
+      <nav className="flex items-center rounded-full border border-line p-0.5" aria-label="Primary">
         {LINKS.map((link) => (
           <button
             key={link.id}
             type="button"
-            onClick={() => onView(link.id)}
+            onClick={() => onNav(link.id)}
             className={[
-              "rounded-full px-2.5 py-1 text-xs",
-              view === link.id ? "bg-raised text-text" : "text-mute hover:text-text",
+              "rounded-full px-3 py-1 text-xs",
+              nav === link.id ? "bg-text text-void" : "text-mute hover:text-text",
             ].join(" ")}
           >
             {link.label}
           </button>
         ))}
       </nav>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
-          onClick={() => onView("cinema")}
-          className="rounded-full border border-line px-2.5 py-1 text-xs text-mute hover:text-text"
+          onClick={() => onNav("editor")}
+          className={[
+            "text-xs",
+            nav === "editor" ? "text-text" : "text-faint hover:text-text",
+          ].join(" ")}
         >
-          Cinema
+          Editor
         </button>
         <button
           type="button"

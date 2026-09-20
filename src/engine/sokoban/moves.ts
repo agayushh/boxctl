@@ -229,7 +229,7 @@ export function expandPushesToWalks(
   return moves;
 }
 
-function walkActions(
+export function walkActions(
   state: SokobanState,
   board: Board,
   target: number,

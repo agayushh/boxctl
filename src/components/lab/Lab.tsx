@@ -5,6 +5,7 @@ import { useSolver } from "@/hooks/useSolver";
 import { useSolutionPlayback } from "@/hooks/useSolutionPlayback";
 import { SearchStage } from "@/components/lab/SearchStage";
 import { Compare } from "@/components/lab/Compare";
+import { PlayPad } from "@/components/lab/PlayPad";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useProgress } from "@/hooks/useProgress";
 import { Board } from "@/components/sokoban/Board";
@@ -104,28 +105,17 @@ export function Lab({
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       {!cinema && (
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-4 py-2 sm:px-6">
-          <p className="font-mono text-sm tabular">
+          <button
+            type="button"
+            onClick={() => setSelector(true)}
+            className="font-mono text-sm tabular text-text hover:text-gold"
+          >
             {campaign ? `${String(level.id).padStart(2, "0")} / 60` : "Custom"}
-          </p>
+          </button>
           {campaign && <p className="text-xs capitalize text-mute">{level.difficulty}</p>}
           <p className="text-xs text-faint">{solvedCount} / 60 solved</p>
-          <div className="mx-2 flex rounded-full border border-line p-0.5">
-            {(["play", "watch", "compare"] as const).map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => onMode(item)}
-                className={[
-                  "rounded-full px-3 py-1 text-xs capitalize",
-                  mode === item ? "bg-text text-void" : "text-mute",
-                ].join(" ")}
-              >
-                {item === "watch" ? "Watch AI" : item === "play" ? "Play" : "Compare"}
-              </button>
-            ))}
-          </div>
           <div className="ml-auto flex flex-wrap gap-1">
-            <NavButton label="Previous" onClick={() => go(level.id - 1)} />
+            <NavButton label="Prev" onClick={() => go(level.id - 1)} />
             <NavButton
               label="Restart"
               onClick={() => {
@@ -135,8 +125,7 @@ export function Lab({
               }}
             />
             <NavButton label="Next" onClick={() => go(level.id + 1)} />
-            <NavButton label="Select Level" onClick={() => setSelector(true)} />
-            <NavButton label="Solve with AI" onClick={() => onMode("watch")} />
+            <NavButton label="Levels" onClick={() => setSelector(true)} />
           </div>
         </div>
       )}
@@ -170,11 +159,21 @@ export function Lab({
         />
       ) : (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-auto p-4 sm:p-6">
-          <Board board={parsed.board} state={game.state} maxSize={560} />
-          <p className="text-center font-mono text-sm tabular text-mute">
-            Moves {game.moves} · Pushes {game.pushes}
-            <span className="mt-1 block text-xs text-faint">Arrow keys or WASD</span>
-          </p>
+          <Board
+            board={parsed.board}
+            state={game.state}
+            maxSize={560}
+            onCellClick={game.click}
+          />
+          <div className="flex flex-col items-center gap-3">
+            <PlayPad onMove={game.move} />
+            <p className="text-center font-mono text-sm tabular text-mute">
+              Moves {game.moves} · Pushes {game.pushes}
+              <span className="mt-1 block text-xs text-faint">
+                Click a tile, use the pad, or arrow keys
+              </span>
+            </p>
+          </div>
         </section>
       )}
 

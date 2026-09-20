@@ -105,7 +105,7 @@ export function Board({
                 type="button"
                 aria-label={`Cell ${x},${y}`}
                 onClick={() => onCellClick(cell)}
-                className="p-0"
+                className="cursor-pointer p-0"
               >
                 <Cell
                   kind={kind}

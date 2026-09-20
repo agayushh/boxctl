@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/layout/Header";
+import { Header, type NavId } from "@/components/layout/Header";
 import { Landing } from "@/components/landing/Landing";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Lab } from "@/components/lab/Lab";
@@ -34,23 +34,25 @@ export default function App() {
     }
   };
 
-  const headerView =
-    state.view === "lab" && state.mode === "compare" ? "compare" : state.view;
+  const nav: NavId =
+    state.view === "lab" || state.view === "cinema" || state.view === "compare"
+      ? state.view === "cinema"
+        ? "cinema"
+        : state.mode
+      : state.view;
+
+  const goNav = (next: NavId) => {
+    if (next === "play") patch({ view: "lab", mode: "play" });
+    else if (next === "watch") patch({ view: "lab", mode: "watch" });
+    else if (next === "compare") patch({ view: "lab", mode: "compare" });
+    else if (next === "cinema") patch({ view: "cinema", mode: "watch" });
+    else patch({ view: next, mode: next === "landing" ? "play" : state.mode });
+  };
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-void text-text">
       {state.view !== "landing" && (
-        <Header
-          view={headerView}
-          cinema={state.view === "cinema"}
-          onView={(view) => {
-            if (view === "compare") patch({ view: "lab", mode: "compare" });
-            else if (view === "lab") patch({ view: "lab", mode: "watch" });
-            else if (view === "cinema") patch({ view: "cinema", mode: "watch" });
-            else patch({ view });
-          }}
-          onShare={share}
-        />
+        <Header nav={nav} cinema={state.view === "cinema"} onNav={goNav} onShare={share} />
       )}
       {copied && (
         <div className="border-b border-line px-4 py-1 text-center text-[11px] text-mute">
