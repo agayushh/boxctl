@@ -4,7 +4,7 @@ import { classifyDifficulty } from "@/levels/classify";
 import { parseLevel } from "@/engine/sokoban/parser";
 import { solve } from "@/engine/search/solver";
 
-const MAX_NODES = 2_000;
+const MAX_NODES = 8_000;
 
 function dump(stats: Record<number, LevelStats>): void {
   writeFileSync(
