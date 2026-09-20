@@ -1,27 +1,19 @@
 const STEPS = [
   {
-    title: "The board is just one picture of the puzzle.",
-    body: "Walls, a person, boxes, goals. A human asks: which way do I push? The computer asks a bigger question: what are all the pictures I can reach?",
+    title: "Left is the puzzle. Right is snapshots of it.",
+    body: "The big board is one picture. Each tiny board is the same puzzle after a push. That is all a “state” is.",
   },
   {
-    title: "Each picture is a state. Each push is an edge.",
-    body: "Put those snapshots on a page and connect the ones that differ by one box push. That drawing is a graph. Sokoban search is walking that graph.",
+    title: "Gold is the plan. Grey is everything else.",
+    body: "From here, several pushes may be legal. Grey boards are those options. Gold is the one this algorithm kept.",
   },
   {
-    title: "The frontier is a to-do list.",
-    body: "From the current snapshot, several pushes might be legal. Those next snapshots sit in a list called the frontier. BFS treats it as a queue. A* treats it as a priority queue. Greedy peeks only at the heuristic.",
+    title: "A*, BFS, and Greedy only differ in what they pick next.",
+    body: "BFS takes the oldest snapshot. Greedy chases the smallest leftover guess h. A* uses f = g + h so it does not wander.",
   },
   {
-    title: "A guess ranks the unknown.",
-    body: "h is a heuristic: match leftover boxes to leftover goals, walking around walls. g is pushes already made. A* uses f = g + h so it does not wander, and it does not get greedy-blind.",
-  },
-  {
-    title: "Some edges are dead ends.",
-    body: "A box in a corner that is not a goal can never be pulled out. The search marks that state and never spends time on its children.",
-  },
-  {
-    title: "The gold path is the plan.",
-    body: "When every box sits on a goal, the walk back to the start is the solution. You do not need the whole tree. You need to see the puzzle, the graph, and that gold chain together — the same idea as solving a cube with graph theory.",
+    title: "Follow the gold chain and you have the solution.",
+    body: "When every box sits on a goal, walk back along gold. You do not need the whole tree — just the puzzle, the snapshots, and that path.",
   },
 ];
 
@@ -29,10 +21,10 @@ export function HowItWorks({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8">
       <p className="text-[11px] uppercase tracking-[0.2em] text-faint">How it works</p>
-      <h1 className="mt-3 font-serif text-4xl tracking-tight">Graph search, in plain sight.</h1>
+      <h1 className="mt-3 font-serif text-4xl tracking-tight">Puzzle on the left. Path on the right.</h1>
       <p className="mt-3 text-mute">
-        You do not need a CS degree. If you can follow a map, you can follow this: the left side
-        is the place, the right side is every useful snapshot, gold is the way home.
+        Watch it like a map: gold is the way home. Switch algorithms to see who picks which next
+        push.
       </p>
       <ol className="mt-10 space-y-8">
         {STEPS.map((step, index) => (

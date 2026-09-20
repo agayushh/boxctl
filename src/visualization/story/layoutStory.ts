@@ -4,12 +4,12 @@ import { isSolved } from "@/engine/sokoban/goals";
 import { getHeuristic } from "@/engine/search/heuristics";
 import { ACTION_GLYPH } from "@/utils/coordinates";
 import type { Action } from "@/utils/coordinates";
+import type { AlgorithmId, SolutionStep } from "@/engine/search/types";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { SolutionStep } from "@/engine/search/types";
 
-export const STORY_CELL = 7;
+export const STORY_CELL = 8;
 export const STORY_PAD = 8;
-export const STORY_SPINE_WINDOW = 8;
+export const STORY_SPINE_WINDOW = 6;
 
 export type StoryKind = "path" | "frontier";
 
@@ -28,6 +28,7 @@ export type StoryNode = {
   chosen?: boolean;
   deadlock?: boolean;
   solved?: boolean;
+  scoreTag?: string;
 };
 
 export type StoryEdge = {
@@ -69,6 +70,7 @@ export function layoutStory(
   frames: SokobanState[],
   steps: SolutionStep[],
   index: number,
+  algorithm: AlgorithmId = "astar",
 ): StoryLayout {
   const { w: gw, h: gh } = glyphSize(board);
   const heuristic = getHeuristic();
@@ -113,14 +115,14 @@ export function layoutStory(
     .sort((a, b) => {
       if (a.chosen !== b.chosen) return a.chosen ? -1 : 1;
       if (a.deadlock !== b.deadlock) return a.deadlock ? 1 : -1;
-      return a.f - b.f;
+      return optionScore(algorithm, a) - optionScore(algorithm, b);
     })
-    .slice(0, 5);
+    .slice(0, 4);
 
-  const xGap = gw + 52;
-  const yGap = gh + 22;
+  const xGap = gw + 44;
+  const yGap = gh + 28;
   const fan = Math.max(0, scored.length - 1);
-  const pathY = 28 + gh / 2 + (fan * yGap) / 2;
+  const pathY = 40 + gh / 2 + (fan * yGap) / 2;
   const nodes: StoryNode[] = [];
 
   visible.forEach((item, slot) => {
@@ -162,6 +164,7 @@ export function layoutStory(
       label: alt.deadlock ? "stuck" : alt.chosen ? "next" : ACTION_GLYPH[alt.action],
       chosen: alt.chosen,
       deadlock: alt.deadlock,
+      scoreTag: alt.deadlock || alt.chosen ? undefined : optionTag(algorithm, alt),
     });
   });
 
@@ -192,12 +195,30 @@ export function layoutStory(
   return {
     nodes,
     edges,
-    width: Math.max(420, maxX + 36),
-    height: Math.max(240, maxY + 36),
+    width: Math.max(360, maxX + 40),
+    height: Math.max(220, maxY + 40),
     currentId: currentNode?.id ?? "path-0",
     glyphW: gw,
     glyphH: gh,
     revealed,
     frontierCount: scored.length,
   };
+}
+
+function optionScore(
+  algorithm: AlgorithmId,
+  alt: { g: number; h: number; f: number },
+): number {
+  if (algorithm === "bfs") return alt.g;
+  if (algorithm === "greedy") return alt.h;
+  return alt.f;
+}
+
+function optionTag(
+  algorithm: AlgorithmId,
+  alt: { g: number; h: number; f: number },
+): string {
+  if (algorithm === "bfs") return "";
+  if (algorithm === "greedy") return `h ${alt.h}`;
+  return `f ${alt.f}`;
 }

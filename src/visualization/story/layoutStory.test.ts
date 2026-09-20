@@ -30,6 +30,13 @@ describe("layoutStory", () => {
 
     const choosing = layoutStory(parsed.board, frames, steps, 0);
     expect(choosing.nodes.some((node) => node.kind === "frontier" && node.chosen)).toBe(true);
+
+    const astar = layoutStory(parsed.board, frames, steps, 0, "astar");
+    const greedy = layoutStory(parsed.board, frames, steps, 0, "greedy");
+    const otherAstar = astar.nodes.find((node) => node.kind === "frontier" && !node.chosen && !node.deadlock);
+    const otherGreedy = greedy.nodes.find((node) => node.kind === "frontier" && !node.chosen && !node.deadlock);
+    if (otherAstar) expect(otherAstar.scoreTag).toMatch(/^f /);
+    if (otherGreedy) expect(otherGreedy.scoreTag).toMatch(/^h /);
   });
 });
 
@@ -47,7 +54,7 @@ describe("narrate", () => {
       f: 6,
     });
     expect(start.focus).toBe("frontier");
-    expect(start.body.toLowerCase()).toContain("frontier");
+    expect(start.body.toLowerCase()).toContain("gold");
 
     const second = narrate({
       algorithm: "astar",

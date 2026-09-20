@@ -70,9 +70,12 @@ export function PlaybackControls({
           type="range"
           min={0}
           max={max}
+          step={1}
           value={Math.min(cursor, max)}
-          onChange={(event) => onSeek(Number(event.target.value))}
-          className="w-full accent-gold"
+          disabled={eventCount <= 1}
+          onInput={(event) => onSeek(Number(event.currentTarget.value))}
+          onChange={(event) => onSeek(Number(event.currentTarget.value))}
+          className="timeline-slider w-full"
           aria-label="Solution timeline"
         />
       </label>

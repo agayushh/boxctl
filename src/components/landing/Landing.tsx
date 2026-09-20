@@ -92,6 +92,7 @@ export function Landing({ onExplore, onWatch, onHow, onCompare }: Props) {
               frames={playback.frames}
               steps={result?.solution?.steps ?? []}
               index={playback.index}
+              algorithm="astar"
               compact
             />
           </div>
