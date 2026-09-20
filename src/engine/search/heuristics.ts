@@ -1,6 +1,5 @@
 import {
   ACTIONS,
-  manhattanPacked,
   oppositeAction,
   stepPacked,
 } from "@/utils/coordinates";
@@ -81,7 +80,15 @@ export function minCostAssignment(cost: number[][]): {
 } {
   const n = cost.length;
   if (n === 0) return { cost: 0, assignment: [] };
+  if (n <= 12) return assignmentDp(cost);
+  return assignmentHungarian(cost);
+}
 
+function assignmentDp(cost: number[][]): {
+  cost: number;
+  assignment: number[];
+} {
+  const n = cost.length;
   const size = 1 << n;
   const dp = new Array<number>(size).fill(INF);
   const parent = new Array<number>(size).fill(-1);
@@ -115,6 +122,63 @@ export function minCostAssignment(cost: number[][]): {
   return { cost: dp[size - 1]!, assignment };
 }
 
+/** Kuhn–Munkres. Needed once a puzzle has more than 8 boxes. */
+function assignmentHungarian(cost: number[][]): {
+  cost: number;
+  assignment: number[];
+} {
+  const n = cost.length;
+  const u = new Array<number>(n + 1).fill(0);
+  const v = new Array<number>(n + 1).fill(0);
+  const p = new Array<number>(n + 1).fill(0);
+  const way = new Array<number>(n + 1).fill(0);
+
+  for (let i = 1; i <= n; i += 1) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = new Array<number>(n + 1).fill(INF);
+    const used = new Array<boolean>(n + 1).fill(false);
+    do {
+      used[j0] = true;
+      const i0 = p[j0]!;
+      let delta = INF;
+      let j1 = 0;
+      for (let j = 1; j <= n; j += 1) {
+        if (used[j]) continue;
+        const cur = cost[i0 - 1]![j - 1]! - u[i0]! - v[j]!;
+        if (cur < minv[j]!) {
+          minv[j] = cur;
+          way[j] = j0;
+        }
+        if (minv[j]! < delta) {
+          delta = minv[j]!;
+          j1 = j;
+        }
+      }
+      for (let j = 0; j <= n; j += 1) {
+        if (used[j]) {
+          u[p[j]!] += delta;
+          v[j]! -= delta;
+        } else {
+          minv[j]! -= delta;
+        }
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do {
+      const j1 = way[j0]!;
+      p[j0] = p[j1]!;
+      j0 = j1;
+    } while (j0 !== 0);
+  }
+
+  const assignment = new Array<number>(n).fill(-1);
+  for (let j = 1; j <= n; j += 1) {
+    if (p[j]! > 0) assignment[p[j]! - 1] = j - 1;
+  }
+  return { cost: -v[0]!, assignment };
+}
+
 function pairCost(box: number, goalIndex: number, table: GoalTable): number {
   return table.dist.get(box)?.[goalIndex] ?? INF;
 }
@@ -128,28 +192,6 @@ export function matchingDistance(
   const goals = table.goals;
   const n = Math.max(boxes.length, goals.length);
   if (n === 0) return { value: 0, pairs: [] };
-
-  if (n > 8) {
-    const pairs: HeuristicBreakdown["pairs"] = [];
-    let value = 0;
-    for (const box of boxes) {
-      const row = table.dist.get(box);
-      let best = INF;
-      let bestGoal = goals[0] ?? box;
-      if (row) {
-        for (let g = 0; g < goals.length; g += 1) {
-          const dist = row[g]!;
-          if (dist < best) {
-            best = dist;
-            bestGoal = goals[g]!;
-          }
-        }
-      }
-      value += best;
-      pairs.push({ box, goal: bestGoal, dist: best >= INF ? manhattanPacked(box, bestGoal) : best });
-    }
-    return { value, pairs };
-  }
 
   const cost: number[][] = [];
   for (let i = 0; i < n; i += 1) {

@@ -138,7 +138,7 @@ export function Compare({ board, start, ascii, yours }: Props) {
                       : card.pushes == null
                         ? card.id === "you"
                           ? "unplayed"
-                          : "no route"
+                        : "limit"
                         : `${formatInt(card.pushes)} pushes`}
                   </p>
                 </div>
@@ -156,7 +156,7 @@ export function Compare({ board, start, ascii, yours }: Props) {
                   </div>
                 ) : card.pushes == null ? (
                   <p className="grid min-h-0 flex-1 place-items-center text-center text-sm text-mute">
-                    No route inside this search budget.
+                    Search hit its limit. The level is still playable.
                   </p>
                 ) : (
                   <div className="min-h-0 flex-1">

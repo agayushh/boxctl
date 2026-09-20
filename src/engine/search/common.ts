@@ -91,10 +91,16 @@ export function expand(
       playerWalks: successor.playerWalks,
     });
     const deadlock = detectSearchDeadlock(child.state, board);
-    if (deadlock.detected) {
-      child.deadlock = deadlock;
+    if (deadlock.detected || child.h >= 10_000) {
+      child.deadlock = deadlock.detected
+        ? deadlock
+        : {
+            detected: true,
+            type: "assignment",
+            explanation: "No remaining way to match every box to a goal.",
+          };
       recorder.discovered(child);
-      recorder.deadlock(child, deadlock.explanation ?? "Deadlock detected.");
+      recorder.deadlock(child, child.deadlock.explanation ?? "Deadlock detected.");
       continue;
     }
     children.push(child);

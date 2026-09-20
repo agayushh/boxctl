@@ -171,6 +171,23 @@ describe("heuristic", () => {
     expect(new Set(goals).size).toBe(goals.length);
     expect(breakdown.value).toBeGreaterThan(0);
   });
+
+  it("keeps exclusive matching when there are more than 8 boxes", () => {
+    const cost = [
+      [9, 2, 8, 7, 6, 5, 4, 3, 1],
+      [1, 9, 8, 7, 6, 5, 4, 3, 2],
+      [2, 1, 9, 8, 7, 6, 5, 4, 3],
+      [3, 2, 1, 9, 8, 7, 6, 5, 4],
+      [4, 3, 2, 1, 9, 8, 7, 6, 5],
+      [5, 4, 3, 2, 1, 9, 8, 7, 6],
+      [6, 5, 4, 3, 2, 1, 9, 8, 7],
+      [7, 6, 5, 4, 3, 2, 1, 9, 8],
+      [8, 7, 6, 5, 4, 3, 2, 1, 9],
+    ];
+    const result = minCostAssignment(cost);
+    expect(result.cost).toBe(9);
+    expect(new Set(result.assignment).size).toBe(9);
+  });
 });
 
 describe("search", () => {

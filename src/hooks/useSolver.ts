@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { AlgorithmId, SearchProgress, SolverResult } from "@/engine/search/types";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import { solve } from "@/engine/search/solver";
+import { solve, nodesFor } from "@/engine/search/solver";
 import { serializeBoard, serializeState } from "@/engine/search/serialize";
 import type { WorkerIn, WorkerOut } from "@/engine/search/serialize";
 
@@ -90,6 +90,7 @@ export function useSolver(
         requestId,
         algorithm,
         mode: options.instant ? "instant" : "visualization",
+        maxNodes: nodesFor(algorithm, state.boxes.size),
         board: serializeBoard(board),
         state: serializeState(state),
       };
