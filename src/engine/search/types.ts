@@ -141,6 +141,13 @@ export type SearchProgress = {
   statesExpanded: number;
   deadlocksDetected: number;
   peakFrontier: number;
+  elapsedMs?: number;
+  state?: SokobanState;
+  action?: Action;
+  g?: number;
+  h?: number;
+  f?: number;
+  steps?: SolutionStep[];
 };
 
 export type SolverResult = {

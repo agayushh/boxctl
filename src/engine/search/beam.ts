@@ -5,6 +5,7 @@ import {
   expand,
   lowestFReason,
   makeNode,
+  makeProgressClock,
   peekAlternatives,
   reconstruct,
   solved,
@@ -27,11 +28,14 @@ export function beam(
   let beamNodes: SearchNode[] = [root];
   const seen = new Set<string>([root.id]);
   recorder.noteFrontier(beamNodes.length);
+  const tick = makeProgressClock(onProgress);
+  tick(recorder, root, t0, true);
 
   while (beamNodes.length > 0) {
     const next: SearchNode[] = [];
     for (const node of beamNodes) {
       recorder.evaluated(node, lowestFReason("beam"), peekAlternatives(beamNodes.filter((n) => n.id !== node.id)));
+      tick(recorder, node, t0);
       if (solved(node, board)) {
         recorder.markSolution(reconstruct(recorder, node.id));
         recorder.complete(performance.now() - t0);
@@ -42,14 +46,6 @@ export function beam(
         return recorder.snapshot("No solution found before the search limit.");
       }
       recorder.expanded(node);
-      if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
-        onProgress({
-          statesGenerated: recorder.stats.statesGenerated,
-          statesExpanded: recorder.stats.statesExpanded,
-          deadlocksDetected: recorder.stats.deadlocksDetected,
-          peakFrontier: recorder.stats.peakFrontier,
-        });
-      }
       for (const child of expand(recorder, board, heuristic, node)) {
         if (seen.has(child.id)) {
           recorder.discovered(child, false);

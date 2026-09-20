@@ -6,6 +6,7 @@ import {
   expand,
   lowestFReason,
   makeNode,
+  makeProgressClock,
   peekAlternatives,
   reconstruct,
   solved,
@@ -35,6 +36,8 @@ export function astar(
   open.push(root);
   const bestG = new Map<string, number>([[root.id, 0]]);
   recorder.noteFrontier(open.size);
+  const tick = makeProgressClock(onProgress);
+  tick(recorder, root, t0, true);
   let visits = 0;
 
   while (open.size > 0) {
@@ -48,6 +51,7 @@ export function astar(
       lowestFReason("astar"),
       recorder.accepting ? peekAlternatives(open.peekSlice(6)) : [],
     );
+    tick(recorder, node, t0);
     if (solved(node, board)) {
       recorder.markSolution(reconstruct(recorder, node.id));
       recorder.complete(performance.now() - t0);
@@ -55,14 +59,6 @@ export function astar(
     }
     if (recorder.stats.statesExpanded >= maxNodes) break;
     recorder.expanded(node);
-    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
-      onProgress({
-        statesGenerated: recorder.stats.statesGenerated,
-        statesExpanded: recorder.stats.statesExpanded,
-        deadlocksDetected: recorder.stats.deadlocksDetected,
-        peakFrontier: recorder.stats.peakFrontier,
-      });
-    }
 
     for (const child of expand(recorder, board, heuristic, node)) {
       const prev = bestG.get(child.id);

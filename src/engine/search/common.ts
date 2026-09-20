@@ -5,7 +5,13 @@ import { canonicalPlayer, generatePushes } from "@/engine/sokoban/moves";
 import { detectSearchDeadlock } from "@/engine/sokoban/deadlocks";
 import { isSolved } from "@/engine/sokoban/goals";
 import type { Board, SokobanState } from "@/engine/sokoban/types";
-import type { Alternative, Heuristic, SearchNode, Solution } from "@/engine/search/types";
+import type {
+  Alternative,
+  Heuristic,
+  SearchNode,
+  SearchProgress,
+  Solution,
+} from "@/engine/search/types";
 import type { SearchRecorder } from "@/engine/search/recorder";
 
 export function makeNode(
@@ -129,6 +135,42 @@ export function peekAlternatives(
       : `f=${node.f}`,
   }));
   return [...listed, ...extra].slice(0, limit);
+}
+
+export function liveProgress(
+  recorder: SearchRecorder,
+  node: SearchNode,
+  elapsedMs: number,
+): SearchProgress {
+  return {
+    statesGenerated: recorder.stats.statesGenerated,
+    statesExpanded: recorder.stats.statesExpanded,
+    deadlocksDetected: recorder.stats.deadlocksDetected,
+    peakFrontier: recorder.stats.peakFrontier,
+    elapsedMs,
+    state: node.state,
+    action: node.action,
+    g: node.g,
+    h: node.h,
+    f: node.f,
+    steps: reconstruct(recorder, node.id).steps,
+  };
+}
+
+export function makeProgressClock(
+  onProgress?: (progress: SearchProgress) => void,
+  intervalMs = 220,
+) {
+  let last = Number.NEGATIVE_INFINITY;
+  let emits = 0;
+  return (recorder: SearchRecorder, node: SearchNode, t0: number, force = false) => {
+    if (!onProgress) return;
+    const now = performance.now();
+    if (!force && emits >= 3 && now - last < intervalMs) return;
+    emits += 1;
+    last = now;
+    onProgress(liveProgress(recorder, node, now - t0));
+  };
 }
 
 export function lowestFReason(algorithm: string): string {

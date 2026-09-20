@@ -270,6 +270,33 @@ describe("catalog levels", () => {
     expect(pushPathSolves(state, board, star.solution!.steps)).toBe(true);
   });
 
+  it("streams the expanding board while A* searches", () => {
+    const { board, state } = parseLevel(`#######
+#     #
+# $ $ #
+#@ . .#
+#######`);
+    const seen: Array<{ g?: number; boxes?: number; steps?: number }> = [];
+    const result = solve({
+      board,
+      state,
+      algorithm: "astar",
+      maxNodes: 20_000,
+      mode: "instant",
+      onProgress: (progress) => {
+        seen.push({
+          g: progress.g,
+          boxes: progress.state?.boxes.size,
+          steps: progress.steps?.length,
+        });
+      },
+    });
+    expect(result.solution).not.toBeNull();
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]!.boxes).toBe(state.boxes.size);
+    expect(seen.some((snapshot) => (snapshot.steps ?? 0) > 0 || (snapshot.g ?? 0) > 0)).toBe(true);
+  });
+
   it("A* solves campaign level 2", () => {
     const level = LEVELS[1]!;
     const parsed = parseLevel(level.ascii);

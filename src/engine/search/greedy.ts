@@ -6,6 +6,7 @@ import {
   expand,
   lowestFReason,
   makeNode,
+  makeProgressClock,
   peekAlternatives,
   reconstruct,
   solved,
@@ -34,6 +35,8 @@ export function greedy(
   open.push(root);
   const seen = new Set<string>([root.id]);
   recorder.noteFrontier(open.size);
+  const tick = makeProgressClock(onProgress);
+  tick(recorder, root, t0, true);
 
   while (open.size > 0) {
     const node = open.pop()!;
@@ -42,6 +45,7 @@ export function greedy(
       lowestFReason("greedy"),
       recorder.accepting ? peekAlternatives(open.peekSlice(6)) : [],
     );
+    tick(recorder, node, t0);
     if (solved(node, board)) {
       recorder.markSolution(reconstruct(recorder, node.id));
       recorder.complete(performance.now() - t0);
@@ -49,14 +53,6 @@ export function greedy(
     }
     if (recorder.stats.statesExpanded >= maxNodes) break;
     recorder.expanded(node);
-    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
-      onProgress({
-        statesGenerated: recorder.stats.statesGenerated,
-        statesExpanded: recorder.stats.statesExpanded,
-        deadlocksDetected: recorder.stats.deadlocksDetected,
-        peakFrontier: recorder.stats.peakFrontier,
-      });
-    }
     for (const child of expand(recorder, board, heuristic, node)) {
       if (seen.has(child.id)) {
         recorder.discovered(child, false);

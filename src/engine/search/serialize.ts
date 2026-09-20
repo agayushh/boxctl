@@ -66,3 +66,16 @@ export type WorkerOut = {
   result?: import("@/engine/search/types").SolverResult;
   progress?: SearchProgress;
 };
+
+export function reviveProgress(progress: SearchProgress): SearchProgress {
+  const state = progress.state;
+  if (!state) return progress;
+  if (state.boxes instanceof Set) return progress;
+  return {
+    ...progress,
+    state: {
+      player: state.player,
+      boxes: new Set(state.boxes as unknown as number[]),
+    },
+  };
+}

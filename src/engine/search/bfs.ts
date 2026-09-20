@@ -5,6 +5,7 @@ import {
   expand,
   lowestFReason,
   makeNode,
+  makeProgressClock,
   peekAlternatives,
   reconstruct,
   solved,
@@ -28,6 +29,8 @@ export function bfs(
   let head = 0;
   const seen = new Set<string>([root.id]);
   recorder.noteFrontier(1);
+  const tick = makeProgressClock(onProgress);
+  tick(recorder, root, t0, true);
 
   while (head < queue.length) {
     const id = queue[head]!;
@@ -40,6 +43,7 @@ export function bfs(
       if (queuedNode) waiting.push(queuedNode);
     }
     recorder.evaluated(node, lowestFReason("bfs"), peekAlternatives(waiting));
+    tick(recorder, node, t0);
     if (solved(node, board)) {
       recorder.markSolution(reconstruct(recorder, node.id));
       recorder.complete(performance.now() - t0);
@@ -47,14 +51,6 @@ export function bfs(
     }
     if (recorder.stats.statesExpanded >= maxNodes) break;
     recorder.expanded(node);
-    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
-      onProgress({
-        statesGenerated: recorder.stats.statesGenerated,
-        statesExpanded: recorder.stats.statesExpanded,
-        deadlocksDetected: recorder.stats.deadlocksDetected,
-        peakFrontier: recorder.stats.peakFrontier,
-      });
-    }
     for (const child of expand(recorder, board, heuristic, node)) {
       if (seen.has(child.id)) {
         recorder.discovered(child, false);

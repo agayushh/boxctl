@@ -5,6 +5,7 @@ import {
   expand,
   lowestFReason,
   makeNode,
+  makeProgressClock,
   reconstruct,
   solved,
 } from "@/engine/search/common";
@@ -27,6 +28,8 @@ export function idastar(
   let iteration = 1;
   let goalId: string | null = null;
   recorder.bound(bound, iteration);
+  const tick = makeProgressClock(onProgress);
+  tick(recorder, root, t0, true);
 
   const search = (nodeId: string, path: Set<string>): number => {
     const node = recorder.get(nodeId);
@@ -34,20 +37,13 @@ export function idastar(
     if (recorder.stats.statesExpanded >= maxNodes) return Number.POSITIVE_INFINITY;
 
     recorder.evaluated(node, lowestFReason("idastar"), []);
+    tick(recorder, node, t0);
     if (node.f > bound) return node.f;
     if (solved(node, board)) {
       goalId = node.id;
       return FOUND;
     }
     recorder.expanded(node);
-    if (onProgress && recorder.stats.statesExpanded % 250 === 0) {
-      onProgress({
-        statesGenerated: recorder.stats.statesGenerated,
-        statesExpanded: recorder.stats.statesExpanded,
-        deadlocksDetected: recorder.stats.deadlocksDetected,
-        peakFrontier: recorder.stats.peakFrontier,
-      });
-    }
 
     let nextBound = Number.POSITIVE_INFINITY;
     const children = expand(recorder, board, heuristic, node).sort((a, b) => a.f - b.f);
