@@ -6,16 +6,16 @@ import { formatTime, loadSave, playerStats } from "./scores/store.js";
 import { runApp } from "./tui/app.js";
 import { THEMES } from "./tui/themes.js";
 
-const HELP = `sokoban — terminal crate-pushing
+const HELP = `boxctl — terminal crate-pushing
 
 Usage:
-  sokoban                 start the game
-  sokoban --level 12      jump to a level
-  sokoban --theme neon    start with a theme
-  sokoban --scores        print high scores
-  sokoban --list          list the 50 levels
-  sokoban --verify        solve every campaign map
-  sokoban --help          show this help
+  boxctl                 start the game
+  boxctl --level 12      jump to a level
+  boxctl --theme neon    start with a theme
+  boxctl --scores        print high scores
+  boxctl --list          list the 50 levels
+  boxctl --verify        solve every campaign map
+  boxctl --help          show this help
 
 Themes: ${THEMES.map((theme) => theme.id).join(", ")}
 `;

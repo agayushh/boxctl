@@ -1,18 +1,18 @@
-# sokoban-tui
+# boxctl
 
-A terminal Sokoban game. Fifty small, solvable puzzles, eight colour themes, and local high scores — no graphics, just a keyboard.
+A terminal crate-pushing game. Fifty small, solvable puzzles, eight colour themes, and local high scores — no graphics, just a keyboard.
 
 Anyone with Node 18+ can play:
 
 ```
-npx sokoban-tui
+npx boxctl
 ```
 
 or install it and play anytime:
 
 ```
-npm install -g sokoban-tui
-sokoban
+npm install -g boxctl
+boxctl
 ```
 
 ## Play
@@ -25,18 +25,18 @@ Every level is open from the start. Skip a hard one with `n` / `p` or the level 
 - ★★☆ within 1.5× par
 - ★☆☆ cleared
 
-Register a player name on first launch. Several people can share a machine; scores stay under `~/.sokoban-tui/save.json`.
+Register a player name on first launch. Several people can share a machine; scores stay under `~/.boxctl/save.json`.
 
 ## Themes
 
 `classic` · `dungeon` · `neon` · `forest` · `ice` · `retro` · `midnight` · `sakura`
 
 ```
-sokoban --theme neon
-sokoban --level 12
-sokoban --scores
-sokoban --list
-sokoban --verify
+boxctl --theme neon
+boxctl --level 12
+boxctl --scores
+boxctl --list
+boxctl --verify
 ```
 
 ## Scripts
@@ -52,7 +52,7 @@ npm run build
 
 The first version ships the first 50 puzzles from **Microban** (April 2000) by David W. Skinner. They were written as a beginner set: small, distinct, and surprisingly sharp. Skinner released the collection for use in Sokoban programs.
 
-A built-in solver has a path for every map (`sokoban --verify`). None of the fifty are dead ends. A few are expert-length (6, 8, 16, 35, 36) — skip them and come back.
+A built-in solver has a path for every map (`boxctl --verify`). None of the fifty are dead ends. A few are expert-length (6, 8, 16, 35, 36) — skip them and come back.
 
 ## License
 

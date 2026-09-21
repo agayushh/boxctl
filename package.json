@@ -1,11 +1,10 @@
 {
-  "name": "sokoban-tui",
+  "name": "boxctl",
   "version": "1.0.0",
-  "description": "A terminal Sokoban game: 50 puzzles, multiple themes, and local high scores.",
+  "description": "A terminal crate-pushing game: 50 puzzles, multiple themes, and local high scores.",
   "type": "module",
   "bin": {
-    "sokoban": "dist/cli.js",
-    "sokoban-tui": "dist/cli.js"
+    "boxctl": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,7 +31,7 @@
     "node": ">=18"
   },
   "keywords": [
-    "sokoban",
+    "boxctl",
     "game",
     "tui",
     "terminal",
