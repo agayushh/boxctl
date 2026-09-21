@@ -1,30 +1,54 @@
-# Heuristic
+# sokoban-tui
 
-Watch search algorithms solve Sokoban.
+A terminal Sokoban game. Fifty small, solvable puzzles, eight colour themes, and local high scores — no graphics, just a keyboard.
 
-Heuristic is a local, in-browser laboratory: a playable Sokoban board beside a live view of the search space. A*, BFS, greedy best-first, IDA*, and beam search all share the same puzzle engine, the same deadlock detectors, and the same event recorder.
-
-## Run
-
-```bash
-npm install
-npm run dev
+```
+npx sokoban-tui
 ```
 
-```bash
+or install it and play anytime:
+
+```
+npm install -g sokoban-tui
+sokoban
+```
+
+## Play
+
+Arrow keys, WASD, or HJKL move. You push crates (`[]`) onto goals (`..`). You cannot pull. Undo with `u`, restart with `r`, cycle themes with `t`, back out with `q`.
+
+Levels unlock in order. Clear one to open the next. Stars are awarded against par:
+
+- ★★★ at or under par moves
+- ★★☆ within 1.5× par
+- ★☆☆ cleared
+
+Register a player name on first launch. Several people can share a machine; scores stay under `~/.sokoban-tui/save.json`.
+
+## Themes
+
+`classic` · `dungeon` · `neon` · `forest` · `ice` · `retro` · `midnight` · `sakura`
+
+```
+sokoban --theme neon
+sokoban --level 12
+sokoban --scores
+sokoban --list
+```
+
+## Scripts
+
+```
+npm install
 npm test
+npm run dev
 npm run build
 ```
 
-## What you are looking at
+## Campaign
 
-The left view is the puzzle. The right view is every **push** the algorithm generated — not every footstep. Frontier, current, expanded, deadlock, pruned, and solution states are drawn from the real solver event stream.
+The first version ships the first 50 puzzles from **Microban** (April 2000) by David W. Skinner. They were written as a beginner set: small, distinct, and surprisingly sharp. Skinner released the collection for use in Sokoban programs.
 
-## Keyboard
+## License
 
-- Arrow keys / WASD — move
-- Space — play / pause search
-- R — reset
-- N / P — next / previous search event
-
-Keyboard shortcuts are disabled in the level editor.
+MIT. Puzzles remain credited to David W. Skinner.
