@@ -44,12 +44,8 @@ export function fitScale(
   maxW: number,
   maxH: number,
 ): Scale {
-  const cellH = Math.max(1, Math.floor(maxH / Math.max(1, boardH)));
-  let cellW = Math.max(2, Math.floor(maxW / Math.max(1, boardW)));
-  if (cellW % 2 === 1) cellW -= 1;
-  const squareW = cellH * 2;
-  if (squareW <= cellW) return { w: Math.max(2, squareW), h: cellH };
-  return { w: Math.max(2, cellW), h: Math.max(1, Math.floor(cellW / 2)) };
+  if (boardW * 4 + 2 <= maxW && boardH * 2 + 2 <= maxH) return { w: 4, h: 2 };
+  return { w: 2, h: 1 };
 }
 
 export function renderBoard(
@@ -69,7 +65,7 @@ export function renderBoard(
     const sprites: string[][] = [];
     for (let x = bounds.x0; x <= bounds.x1; x += 1) {
       const cell = (y << 8) | x;
-      sprites.push(sprite(cellKind(board, state, cell), theme, scale, color));
+      sprites.push(sprite(cellKind(board, state, cell), theme, scale, color, x, y));
     }
     for (let r = 0; r < scale.h; r += 1) {
       lines[(y - bounds.y0) * scale.h + r] = sprites.map((cell) => cell[r]!).join("");
@@ -165,47 +161,37 @@ export function renderPlay(options: {
   win: boolean;
   newBest: boolean;
 }): string {
-  const { theme, color, session, player, win, cols, rows } = options;
+  const { theme, color, session, win, cols, rows } = options;
   const level = session.level;
-  const record = player?.levels[String(level.id)];
-  const header = chromeBar(
-    cols,
-    theme,
-    color,
-    ` ${String(level.id).padStart(2, "0")}   ${level.name}`,
-    `${difficultyLabel(level.difficulty)}  ·  ${theme.name}  ·  ${player?.name ?? "guest"} `,
-  );
+  const header = [
+    colorize(theme, color, "muted", ` ${String(level.id).padStart(2, "0")}`),
+    colorize(theme, color, "title", ` ${level.name}`),
+  ];
 
-  const statsLine = `  MOVES ${session.moves}    PUSHES ${session.pushes}    TIME ${formatTime(session.elapsedMs)}    BOXES ${session.placed}/${session.totalBoxes}    PAR ${level.parMoves > 0 ? `${level.parMoves}/${level.parPushes}` : "—"}    BEST ${record ? `${record.bestMoves}m ${formatTime(record.bestTimeMs)}` : "—"}`;
+  const statsLine = ` ${session.moves} moves   ${session.pushes} pushes   ${session.placed}/${session.totalBoxes}   ${formatTime(session.elapsedMs)}`;
   const footer = win
     ? [
-        chromeBar(
-          cols,
+        colorize(
           theme,
           color,
-          `  LEVEL CLEAR    ${session.moves} moves · ${session.pushes} pushes · ${formatTime(session.elapsedMs)}${level.parMoves > 0 ? `    ${starBar(starsNow(session.moves, level.parMoves))}` : ""}${options.newBest ? "    new best" : ""}`,
-          "enter next   r retry   q menu ",
+          "ok",
+          ` cleared  ${session.moves} moves · ${session.pushes} pushes${options.newBest ? "  ·  new best" : ""}`,
         ),
+        colorize(theme, color, "muted", " enter next   r retry   q menu"),
       ]
     : [
-        chromeBar(cols, theme, color, statsLine, ""),
-        keysBar(
-          cols,
-          theme,
-          color,
-          "←↑↓→  wasd  hjkl  move     u undo     r restart     n next     p prev     t theme     q menu",
-        ),
+        colorize(theme, color, "muted", statsLine),
+        colorize(theme, color, "muted", " arrows move   u undo   r restart   q menu"),
       ];
 
-  const stageH = Math.max(6, rows - 1 - footer.length);
-  const innerW = Math.max(10, cols - 8);
-  const innerH = Math.max(4, stageH - 4);
+  const stageH = Math.max(6, rows - header.length - footer.length);
+  const innerW = Math.max(10, cols - 4);
+  const innerH = Math.max(4, stageH - 2);
   const bounds = occupiedBounds(session.board);
   const scale = fitScale(bounds.x1 - bounds.x0 + 1, bounds.y1 - bounds.y0 + 1, innerW, innerH);
   let board = renderBoard(session.board, session.state, theme, color, scale);
-  board = frameArt(board, theme, color);
   if (win) board = overlayCard(board, winCard(session, options.newBest, theme, color), theme, color);
-  return assemble(cols, rows, theme, color, [header], board, footer);
+  return quietStage(cols, rows, theme, color, header, board, footer);
 }
 
 export function renderLevels(options: {
@@ -371,9 +357,9 @@ export function renderHelp(options: {
   const footer = keysBar(cols, theme, color, "q back");
   const rules = [
     colorize(theme, color, "title", "  The warehouse"),
-    colorize(theme, color, "text", "  Push every crate onto a marked goal."),
+    colorize(theme, color, "text", "  You are the stick figure. Push every crate onto a dot."),
     colorize(theme, color, "text", "  You can only push — never pull."),
-    colorize(theme, color, "text", "  A crate in a corner is usually stuck for good."),
+    colorize(theme, color, "text", "  A crate jammed in a corner is usually stuck."),
     "",
     colorize(theme, color, "title", "  Stars"),
     colorize(theme, color, "text", "  ★★★   at or under par moves"),
@@ -480,49 +466,100 @@ const MENU_HINTS: Record<MenuId, string> = {
   quit: "save and leave",
 };
 
-function sprite(kind: CellKind, theme: Theme, scale: Scale, color: boolean): string[] {
-  if (scale.w === 2 && scale.h === 1) {
-    return [paint(theme.glyphs[kind], { fg: theme.colors[kind], enabled: color })];
-  }
-
-  const ascii = theme.id === "classic" || theme.id === "retro";
-  const fgcode = theme.colors[kind];
-  const bgcode = cellBg(kind, theme);
-  const solid =
-    kind === "wall" || kind === "void" || kind === "box" || kind === "box-on-goal";
-
-  if (solid) {
-    const ch =
-      kind === "void" ? " " : kind === "wall" ? (ascii ? "#" : "█") : ascii ? "#" : "▓";
-    const line = paint(repeat(ch, scale.w), { fg: fgcode, bg: bgcode, enabled: color });
-    return Array.from({ length: scale.h }, () => line);
-  }
-
-  const mark =
-    kind === "player" || kind === "player-on-goal"
-      ? centerGlyph(ascii ? "@" : "▲", scale.w)
-      : kind === "goal"
-        ? centerGlyph(ascii ? ".." : "·", scale.w)
-        : " ".repeat(scale.w);
-  const blank = paint(" ".repeat(scale.w), { fg: fgcode, bg: bgcode, enabled: color });
-  const marked = paint(mark, { fg: fgcode, bg: bgcode, enabled: color });
-  const mid = Math.floor((scale.h - 1) / 2);
-  return Array.from({ length: scale.h }, (_, row) => (row === mid ? marked : blank));
+function sprite(
+  kind: CellKind,
+  theme: Theme,
+  scale: Scale,
+  color: boolean,
+  x: number,
+  y: number,
+): string[] {
+  if (scale.w === 2 && scale.h === 1) return compactTile(kind, theme, color);
+  return warehouseTile(kind, theme, color, x, y);
 }
 
-function cellBg(kind: CellKind, theme: Theme): number {
-  if (kind === "wall") return theme.colors.wall;
-  if (kind === "box") return theme.colors.box;
-  if (kind === "box-on-goal") return theme.colors["box-on-goal"];
-  if (kind === "goal" || kind === "player-on-goal") return theme.colors.goal;
-  if (kind === "void") return theme.bg ?? 232;
-  return theme.floorBg;
+function compactTile(kind: CellKind, theme: Theme, color: boolean): string[] {
+  const glyph =
+    kind === "wall"
+      ? "██"
+      : kind === "box"
+        ? "[]"
+        : kind === "box-on-goal"
+          ? "<>"
+          : kind === "goal"
+            ? "● "
+            : kind === "player" || kind === "player-on-goal"
+              ? "o "
+              : "  ";
+  const bg =
+    kind === "void"
+      ? (theme.bg ?? 16)
+      : kind === "wall"
+        ? theme.colors.wall
+        : theme.floorBg;
+  return [paint(glyph, { fg: theme.colors[kind], bg, enabled: color })];
 }
 
-function centerGlyph(glyph: string, width: number): string {
-  const g = glyph.length > width ? glyph.slice(0, width) : glyph;
-  const left = Math.max(0, Math.floor((width - g.length) / 2));
-  return `${" ".repeat(left)}${g}${" ".repeat(Math.max(0, width - g.length - left))}`;
+function warehouseTile(
+  kind: CellKind,
+  theme: Theme,
+  color: boolean,
+  x: number,
+  y: number,
+): string[] {
+  const floor = theme.floorBg;
+  const brick = theme.colors.wall;
+  const mortar = theme.muted;
+  const ink = 16;
+  const crate = kind === "box-on-goal" ? theme.colors["box-on-goal"] : theme.colors.box;
+  const fill = (text: string, fgcode: number, bg: number) =>
+    paint(text, { fg: fgcode, bg, enabled: color });
+
+  if (kind === "void") {
+    const bg = theme.bg ?? 16;
+    return [fill("    ", bg, bg), fill("    ", bg, bg)];
+  }
+  if (kind === "wall") {
+    const a = (x + y) % 2 === 0;
+    return a
+      ? [fill("▀█▀█", brick, mortar), fill("█▀█▀", brick, mortar)]
+      : [fill("█▀█▀", brick, mortar), fill("▀█▀█", brick, mortar)];
+  }
+  if (kind === "box" || kind === "box-on-goal") {
+    return [fill("┌──┐", ink, crate), fill("│><│", ink, crate)];
+  }
+  if (kind === "player" || kind === "player-on-goal") {
+    const bg = kind === "player-on-goal" ? theme.colors.goal : floor;
+    return [fill(" o  ", theme.colors.player, bg), fill("/|\\ ", theme.colors.player, bg)];
+  }
+  if (kind === "goal") {
+    return [fill("    ", theme.colors.goal, floor), fill(" ●  ", theme.colors.goal, floor)];
+  }
+  return [fill("    ", floor, floor), fill("    ", floor, floor)];
+}
+
+function quietStage(
+  cols: number,
+  rows: number,
+  theme: Theme,
+  color: boolean,
+  header: string[],
+  stage: string[],
+  footer: string[],
+): string {
+  const bg = theme.bg ?? 16;
+  const blank = paint(" ".repeat(Math.max(0, cols)), { bg, enabled: color });
+  const line = (text: string) => surround(text, cols, { bg, enabled: color });
+  const body = [...header.map(line), "", ...stage.map(line), "", ...footer.map(line)];
+  const extra = rows - body.length;
+  const top = Math.max(0, Math.floor(extra / 2));
+  const lines = [
+    ...Array.from({ length: top }, () => blank),
+    ...body,
+    ...Array.from({ length: Math.max(0, rows - top - body.length) }, () => blank),
+  ].slice(0, rows);
+  while (lines.length < rows) lines.push(blank);
+  return lines.join("\n");
 }
 
 function framedBoard(level: Level, theme: Theme, color: boolean, maxW: number, maxH: number): string[] {
@@ -534,16 +571,16 @@ function framedBoard(level: Level, theme: Theme, color: boolean, maxW: number, m
     Math.max(8, maxW - 4),
     Math.max(3, maxH - 4),
   );
-  return frameArt(renderBoard(parsed.board, parsed.state, theme, color, scale), theme, color);
+  return renderBoard(parsed.board, parsed.state, theme, color, scale);
 }
 
 function frameArt(lines: string[], theme: Theme, color: boolean): string[] {
   if (lines.length === 0) return lines;
   const width = visibleWidth(lines[0]!);
   const edge = (text: string) => fg(theme.frame, text, color);
-  const top = edge(`┌${repeat("─", width)}┐`);
-  const bottom = edge(`└${repeat("─", width)}┘`);
-  const mid = lines.map((line) => `${edge("│")}${line}${edge("│")}`);
+  const top = edge(`╔${repeat("═", width)}╗`);
+  const bottom = edge(`╚${repeat("═", width)}╝`);
+  const mid = lines.map((line) => `${edge("║")}${line}${edge("║")}`);
   return [top, ...mid, bottom];
 }
 
@@ -611,18 +648,34 @@ function assemble(
   footer: string[],
   align: "center" | "top" = "center",
 ): string {
-  const stageH = Math.max(1, rows - header.length - footer.length);
-  const bg = theme.bg ?? 232;
-  const centered = stage.map((line) => surround(line, cols, { bg, enabled: color }));
-  const extra = stageH - centered.length;
+  const inner = Math.max(20, cols - 2);
+  const edge = (text: string) => fg(theme.frame, text, color);
+  const rule = edge(repeat("═", inner));
+  const wrap = (line: string) =>
+    `${edge("║")}${clip(line, inner)}${" ".repeat(Math.max(0, inner - visibleWidth(clip(line, inner))))}${edge("║")}`;
+
+  const top = `${edge("╔")}${rule}${edge("╗")}`;
+  const split = `${edge("╠")}${rule}${edge("╣")}`;
+  const bottom = `${edge("╚")}${rule}${edge("╝")}`;
+
+  const chrome = [
+    top,
+    ...header.map(wrap),
+    split,
+  ];
+  const foot = footer.length
+    ? [split, ...footer.map(wrap), bottom]
+    : [bottom];
+  const stageH = Math.max(1, rows - chrome.length - foot.length);
+  const extra = stageH - stage.length;
   const topPad = align === "top" ? Math.min(1, Math.max(0, extra)) : Math.max(0, Math.floor(extra / 2));
-  const blank = surround("", cols, { bg, enabled: color });
+  const blank = wrap("");
   const body = [
     ...Array.from({ length: topPad }, () => blank),
-    ...centered,
-    ...Array.from({ length: Math.max(0, stageH - topPad - centered.length) }, () => blank),
+    ...stage.map((line) => wrap(surround(line, inner, { bg: theme.bg ?? 232, enabled: color }))),
+    ...Array.from({ length: Math.max(0, stageH - topPad - stage.length) }, () => blank),
   ].slice(0, stageH);
-  const lines = [...header, ...body, ...footer].slice(0, rows);
+  const lines = [...chrome, ...body, ...foot].slice(0, rows);
   while (lines.length < rows) lines.push(blank);
   return lines.join("\n");
 }
