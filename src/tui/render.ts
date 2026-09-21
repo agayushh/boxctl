@@ -538,7 +538,7 @@ function smallTile(
   }
   if (kind === "player" || kind === "player-on-goal") {
     const bg = kind === "player-on-goal" ? theme.colors.goal : floor;
-    return cellRows([" o  ", "/|\\ "], theme.colors.player, bg, color);
+    return cellRows([" ▄  ", "/█\\ "], theme.colors.player, bg, color);
   }
   if (kind === "goal") {
     return cellRows(["    ", " ●  "], theme.colors.goal, floor, color);
@@ -573,7 +573,7 @@ function mediumTile(
   }
   if (kind === "player" || kind === "player-on-goal") {
     const bg = kind === "player-on-goal" ? theme.colors.goal : floor;
-    return cellRows(["  o   ", " /|\\  ", "      "], theme.colors.player, bg, color);
+    return cellRows(["  ▄   ", " /█\\  ", " / \\  "], theme.colors.player, bg, color);
   }
   if (kind === "goal") {
     return cellRows(["      ", "  ●   ", "      "], theme.colors.goal, floor, color);
