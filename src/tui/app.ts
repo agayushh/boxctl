@@ -40,7 +40,7 @@ import { THEMES, themeById, type Theme } from "./themes.js";
 type Screen =
   | { kind: "name"; draft: string }
   | { kind: "menu"; index: number }
-  | { kind: "play"; session: Session; win: boolean; newBest: boolean }
+  | { kind: "play"; session: Session; win: boolean; newBest: boolean; help: boolean }
   | { kind: "levels"; index: number }
   | { kind: "themes"; index: number }
   | { kind: "scores" }
@@ -164,6 +164,7 @@ function renderScreen(
         player,
         win: screen.win,
         newBest: screen.newBest,
+        help: screen.help,
       });
     case "levels":
       return renderLevels({ cols, rows, theme, color, index: screen.index, player });
@@ -212,6 +213,14 @@ function reduce(screen: Screen, key: Key, save: SaveFile, startLevel?: number): 
   }
 
   if (screen.kind === "play") {
+    if (screen.help) {
+      if (key.type === "escape" || key.type === "enter") return { ...screen, help: false };
+      if (key.type === "char" && (key.value === "?" || key.value.toLowerCase() === "q")) {
+        return { ...screen, help: false };
+      }
+      return screen;
+    }
+    if (key.type === "char" && key.value === "?") return { ...screen, help: true };
     if (quitKey(key)) return { kind: "menu", index: 0 };
     if (screen.win) {
       if (key.type === "enter" || (key.type === "char" && key.value.toLowerCase() === "n")) {
@@ -333,6 +342,7 @@ function playLevel(save: SaveFile, id: number, force = false): Screen {
     session: new Session(levelById(clamped)),
     win: false,
     newBest: false,
+    help: false,
   };
 }
 

@@ -161,8 +161,10 @@ export function renderPlay(options: {
   player: PlayerSave | null;
   win: boolean;
   newBest: boolean;
+  help?: boolean;
 }): string {
   const { theme, color, session, win, cols, rows } = options;
+  const help = Boolean(options.help);
   const level = session.level;
   const header = [
     colorize(theme, color, "muted", ` ${String(level.id).padStart(2, "0")}`),
@@ -170,20 +172,25 @@ export function renderPlay(options: {
   ];
 
   const statsLine = ` ${session.moves} moves   ${session.pushes} pushes   ${session.placed}/${session.totalBoxes}   ${formatTime(session.elapsedMs)}`;
-  const footer = win
+  const footer = help
     ? [
-        colorize(
-          theme,
-          color,
-          "ok",
-          ` cleared  ${session.moves} moves · ${session.pushes} pushes${options.newBest ? "  ·  new best" : ""}`,
-        ),
-        colorize(theme, color, "muted", " enter next   r retry   q menu"),
+        colorize(theme, color, "title", " commands"),
+        colorize(theme, color, "muted", " ? or esc close"),
       ]
-    : [
-        colorize(theme, color, "muted", statsLine),
-        colorize(theme, color, "muted", " arrows move   u undo   r restart   q menu"),
-      ];
+    : win
+      ? [
+          colorize(
+            theme,
+            color,
+            "ok",
+            ` cleared  ${session.moves} moves · ${session.pushes} pushes${options.newBest ? "  ·  new best" : ""}`,
+          ),
+          colorize(theme, color, "muted", " enter next   r retry   ? help   q menu"),
+        ]
+      : [
+          colorize(theme, color, "muted", statsLine),
+          colorize(theme, color, "muted", " arrows move   u undo   r restart   ? help   q menu"),
+        ];
 
   const stageH = Math.max(6, rows - header.length - footer.length);
   const innerW = Math.max(10, cols - 4);
@@ -191,7 +198,8 @@ export function renderPlay(options: {
   const bounds = occupiedBounds(session.board);
   const scale = fitScale(bounds.x1 - bounds.x0 + 1, bounds.y1 - bounds.y0 + 1, innerW, innerH);
   let board = renderBoard(session.board, session.state, theme, color, scale);
-  if (win) board = overlayCard(board, winCard(session, options.newBest, theme, color), theme, color);
+  if (help) board = overlayCard(board, playHelpCard(theme, color), theme, color);
+  else if (win) board = overlayCard(board, winCard(session, options.newBest, theme, color), theme, color);
   return quietStage(cols, rows, theme, color, header, board, footer);
 }
 
@@ -374,6 +382,7 @@ export function renderHelp(options: {
     colorize(theme, color, "text", "  R                        restart"),
     colorize(theme, color, "text", "  N / P                    next / previous"),
     colorize(theme, color, "text", "  T                        cycle theme"),
+    colorize(theme, color, "text", "  ?                        commands"),
     colorize(theme, color, "text", "  Q / Esc                  back"),
     "",
     colorize(theme, color, "muted", "  Microban puzzles by David W. Skinner."),
@@ -629,11 +638,19 @@ function frameArt(lines: string[], theme: Theme, color: boolean): string[] {
 }
 
 function overlayCard(base: string[], card: string[], theme: Theme, color: boolean): string[] {
-  if (base.length < card.length + 2) return card;
-  const width = visibleWidth(base[0] ?? "");
-  if (width < 38) return base;
-  const top = Math.max(1, Math.floor((base.length - card.length) / 2));
-  const out = [...base];
+  if (card.length === 0) return base;
+  const cardW = visibleWidth(card[0] ?? "");
+  const baseW = visibleWidth(base[0] ?? "");
+  const width = Math.max(baseW, cardW, 1);
+  const bg = theme.bg ?? 16;
+  const padded = (base.length === 0 ? [""] : base).map((line) =>
+    surround(line, width, { bg, enabled: color }),
+  );
+  while (padded.length < card.length + 2) {
+    padded.push(surround("", width, { bg, enabled: color }));
+  }
+  const top = Math.max(0, Math.floor((padded.length - card.length) / 2));
+  const out = [...padded];
   for (let i = 0; i < card.length; i += 1) {
     const y = top + i;
     if (y >= 0 && y < out.length) {
@@ -641,6 +658,32 @@ function overlayCard(base: string[], card: string[], theme: Theme, color: boolea
     }
   }
   return out;
+}
+
+function playHelpCard(theme: Theme, color: boolean): string[] {
+  const width = 44;
+  const panel = theme.barBg === (theme.bg ?? 16) ? 235 : theme.barBg;
+  const row = (text: string, token: "title" | "text" | "muted") =>
+    paint(`│${pad(text, width - 2)}│`, { fg: theme[token], bg: panel, enabled: color });
+  const edge = (text: string) => paint(text, { fg: theme.title, bg: panel, enabled: color });
+  return [
+    edge(`┌${repeat("─", width - 2)}┐`),
+    row("COMMANDS", "title"),
+    row("", "text"),
+    row("  arrows   WASD   HJKL      move", "text"),
+    row("  u                         undo", "text"),
+    row("  r                         restart", "text"),
+    row("  n / p                     next / previous", "text"),
+    row("  t                         cycle theme", "text"),
+    row("  ?                         this list", "text"),
+    row("  q  esc                    menu", "text"),
+    row("", "text"),
+    row("  Push every crate onto a dot.", "muted"),
+    row("  You can only push — never pull.", "muted"),
+    row("", "text"),
+    row("? or esc to close", "muted"),
+    edge(`└${repeat("─", width - 2)}┘`),
+  ];
 }
 
 function winCard(session: Session, newBest: boolean, theme: Theme, color: boolean): string[] {
