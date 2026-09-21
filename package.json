@@ -1,6 +1,6 @@
 {
   "name": "boxctl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A terminal crate-pushing game: 50 puzzles, multiple themes, and local high scores.",
   "type": "module",
   "bin": {
@@ -42,12 +42,12 @@
   "author": "agayushh <agayush088@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agayushh/heuristic.git"
+    "url": "git+https://github.com/agayushh/boxctl.git"
   },
   "bugs": {
-    "url": "https://github.com/agayushh/heuristic/issues"
+    "url": "https://github.com/agayushh/boxctl/issues"
   },
-  "homepage": "https://github.com/agayushh/heuristic#readme",
+  "homepage": "https://github.com/agayushh/boxctl#readme",
   "devDependencies": {
     "@types/node": "^24.13.3",
     "tsx": "^4.20.5",
