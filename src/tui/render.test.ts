@@ -69,5 +69,31 @@ describe("play layout", () => {
     expect(plain).toContain("▄");
     expect(plain).toContain("/█\\");
     expect(plain).toContain("/ \\");
+    expect(plain).toContain("? help");
+    expect(plain).not.toContain("╔");
+    expect(plain).not.toContain("╠");
+    expect(plain).not.toMatch(/═{4,}/);
+  });
+
+  it("pops a command list over the board", () => {
+    const session = new Session(LEVELS[1]!);
+    const player = upsertPlayer(emptySave(), "Ada");
+    const frame = renderPlay({
+      cols: 120,
+      rows: 40,
+      theme: themeById("classic"),
+      color: false,
+      session,
+      player,
+      win: false,
+      newBest: false,
+      help: true,
+    });
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("COMMANDS");
+    expect(plain).toContain("undo");
+    expect(plain).toContain("restart");
+    expect(plain).toContain("? or esc to close");
+    expect(plain).not.toContain("╔");
   });
 });
