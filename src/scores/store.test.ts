@@ -49,7 +49,7 @@ describe("scores", () => {
   });
 
   it("round-trips a save file", () => {
-    const dir = mkdtempSync(join(tmpdir(), "sokoban-"));
+    const dir = mkdtempSync(join(tmpdir(), "boxctl-"));
     const file = join(dir, "save.json");
     const save = emptySave();
     upsertPlayer(save, "Ada");

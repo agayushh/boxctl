@@ -35,7 +35,12 @@ export type Completion = {
 };
 
 export function defaultSavePath(): string {
-  return process.env.SOKOBAN_SAVE ?? path.join(os.homedir(), ".sokoban-tui", "save.json");
+  if (process.env.BOXCTL_SAVE) return process.env.BOXCTL_SAVE;
+  if (process.env.SOKOBAN_SAVE) return process.env.SOKOBAN_SAVE;
+  const next = path.join(os.homedir(), ".boxctl", "save.json");
+  const prev = path.join(os.homedir(), ".sokoban-tui", "save.json");
+  if (!fs.existsSync(next) && fs.existsSync(prev)) return prev;
+  return next;
 }
 
 export function emptySave(): SaveFile {
