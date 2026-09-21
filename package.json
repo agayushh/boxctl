@@ -1,7 +1,7 @@
 {
   "name": "boxctl",
   "version": "1.0.1",
-  "description": "A terminal crate-pushing game: 50 puzzles, multiple themes, and local high scores.",
+  "description": "Terminal Sokoban. Play 50 crate-pushing puzzles with npx boxctl. Themes, undo, stars, local high scores, and a built-in solver.",
   "type": "module",
   "bin": {
     "boxctl": "dist/cli.js"
@@ -17,7 +17,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc",
@@ -31,12 +32,23 @@
     "node": ">=18"
   },
   "keywords": [
-    "boxctl",
-    "game",
+    "sokoban",
+    "sokoban-game",
+    "sokoban-solver",
+    "terminal-game",
+    "cli-game",
+    "puzzle-game",
+    "microban",
     "tui",
     "terminal",
+    "cli",
     "puzzle",
-    "cli"
+    "crate-pushing",
+    "command-line",
+    "npx",
+    "game",
+    "nodejs",
+    "boxctl"
   ],
   "license": "MIT",
   "author": "agayushh <agayush088@gmail.com>",
