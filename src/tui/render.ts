@@ -110,7 +110,7 @@ export function renderMenu(options: {
     cols,
     theme,
     color,
-    " SOKOBAN",
+    " BOXCTL",
     `${player?.name ?? "guest"}  ·  ${stats.completed}/${LEVEL_COUNT}  ·  ${theme.name} `,
   );
   const footer = keysBar(cols, theme, color, "↑↓ select    enter confirm    q quit");
@@ -386,7 +386,7 @@ export function renderHelp(options: {
     colorize(theme, color, "text", "  Q / Esc                  back"),
     "",
     colorize(theme, color, "muted", "  Microban puzzles by David W. Skinner."),
-    colorize(theme, color, "muted", "  Scores:  ~/.sokoban-tui/save.json"),
+    colorize(theme, color, "muted", "  Scores:  ~/.boxctl/save.json"),
   ];
   return assemble(cols, rows, theme, color, [header], splitStage(rules, keys, cols, theme, color), [footer], "top");
 }
@@ -441,13 +441,13 @@ export function renderName(options: {
   draft: string;
 }): string {
   const { theme, color, draft, cols, rows } = options;
-  const header = chromeBar(cols, theme, color, " SOKOBAN", "new player ");
+  const header = chromeBar(cols, theme, color, " BOXCTL", "new player ");
   const footer = keysBar(cols, theme, color, "type a name    enter to start");
   const width = 42;
   const card = [
     colorize(theme, color, "muted", `┌${repeat("─", width - 2)}┐`),
     colorize(theme, color, "muted", `│${pad("", width - 2)}│`),
-    colorize(theme, color, "title", `│${pad("S O K O B A N", width - 2, "center")}│`),
+    colorize(theme, color, "title", `│${pad("B O X C T L", width - 2, "center")}│`),
     colorize(theme, color, "muted", `│${pad("register a player to keep scores", width - 2, "center")}│`),
     colorize(theme, color, "muted", `│${pad("", width - 2)}│`),
     colorize(theme, color, "accent", `│${pad(`name  ${draft}█`, width - 2, "center")}│`),
@@ -458,7 +458,7 @@ export function renderName(options: {
 }
 
 export function renderTooSmall(cols: number, rows: number, theme: Theme, color: boolean): string {
-  const header = chromeBar(cols, theme, color, " SOKOBAN", "");
+  const header = chromeBar(cols, theme, color, " BOXCTL", "");
   const body = [
     colorize(theme, color, "warn", "  Terminal is too small."),
     colorize(theme, color, "muted", `  Need at least 60×18. Now ${cols}×${rows}.`),

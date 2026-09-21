@@ -55,7 +55,7 @@ export type AppOptions = {
 
 export function runApp(options: AppOptions = {}): void {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    process.stderr.write("sokoban needs an interactive terminal.\n");
+    process.stderr.write("boxctl needs an interactive terminal.\n");
     process.exitCode = 1;
     return;
   }
