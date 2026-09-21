@@ -14,6 +14,7 @@ import {
   ALT_OFF,
   ALT_ON,
   CLEAR,
+  ERASE_LINE,
   HIDE_CURSOR,
   HOME,
   SHOW_CURSOR,
@@ -100,7 +101,12 @@ export function runApp(options: AppOptions = {}): void {
     } else {
       frame = renderScreen(screen, save, theme, color, cols, rows, player);
     }
-    process.stdout.write(HOME + frame);
+    const lines = frame.split("\n");
+    let out = HOME;
+    for (let i = 0; i < rows; i += 1) {
+      out += `\x1b[${i + 1};1H${ERASE_LINE}${lines[i] ?? ""}`;
+    }
+    process.stdout.write(out);
   };
 
   const handle = (key: Key) => {

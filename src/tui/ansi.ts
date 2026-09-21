@@ -7,6 +7,7 @@ export const WRAP_OFF = "\x1b[?7l";
 export const WRAP_ON = "\x1b[?7h";
 export const CLEAR = "\x1b[2J\x1b[H";
 export const HOME = "\x1b[H";
+export const ERASE_LINE = "\x1b[2K";
 
 export function colorEnabled(): boolean {
   if (process.env.NO_COLOR) return false;

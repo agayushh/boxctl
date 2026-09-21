@@ -589,17 +589,18 @@ function quietStage(
   header: string[],
   stage: string[],
   footer: string[],
+  align: "center" | "top" = "center",
 ): string {
   const bg = theme.bg ?? 16;
   const blank = paint(" ".repeat(Math.max(0, cols)), { bg, enabled: color });
   const line = (text: string) => surround(text, cols, { bg, enabled: color });
   const body = [...header.map(line), "", ...stage.map(line), "", ...footer.map(line)];
   const extra = rows - body.length;
-  const top = Math.max(0, Math.floor(extra / 2));
+  const topPad = align === "top" ? Math.min(1, Math.max(0, extra)) : Math.max(0, Math.floor(extra / 2));
   const lines = [
-    ...Array.from({ length: top }, () => blank),
+    ...Array.from({ length: topPad }, () => blank),
     ...body,
-    ...Array.from({ length: Math.max(0, rows - top - body.length) }, () => blank),
+    ...Array.from({ length: Math.max(0, rows - topPad - body.length) }, () => blank),
   ].slice(0, rows);
   while (lines.length < rows) lines.push(blank);
   return lines.join("\n");
@@ -691,36 +692,7 @@ function assemble(
   footer: string[],
   align: "center" | "top" = "center",
 ): string {
-  const inner = Math.max(20, cols - 2);
-  const edge = (text: string) => fg(theme.frame, text, color);
-  const rule = edge(repeat("═", inner));
-  const wrap = (line: string) =>
-    `${edge("║")}${clip(line, inner)}${" ".repeat(Math.max(0, inner - visibleWidth(clip(line, inner))))}${edge("║")}`;
-
-  const top = `${edge("╔")}${rule}${edge("╗")}`;
-  const split = `${edge("╠")}${rule}${edge("╣")}`;
-  const bottom = `${edge("╚")}${rule}${edge("╝")}`;
-
-  const chrome = [
-    top,
-    ...header.map(wrap),
-    split,
-  ];
-  const foot = footer.length
-    ? [split, ...footer.map(wrap), bottom]
-    : [bottom];
-  const stageH = Math.max(1, rows - chrome.length - foot.length);
-  const extra = stageH - stage.length;
-  const topPad = align === "top" ? Math.min(1, Math.max(0, extra)) : Math.max(0, Math.floor(extra / 2));
-  const blank = wrap("");
-  const body = [
-    ...Array.from({ length: topPad }, () => blank),
-    ...stage.map((line) => wrap(surround(line, inner, { bg: theme.bg ?? 232, enabled: color }))),
-    ...Array.from({ length: Math.max(0, stageH - topPad - stage.length) }, () => blank),
-  ].slice(0, stageH);
-  const lines = [...chrome, ...body, ...foot].slice(0, rows);
-  while (lines.length < rows) lines.push(blank);
-  return lines.join("\n");
+  return quietStage(cols, rows, theme, color, header, stage, footer, align);
 }
 
 function chromeBar(cols: number, theme: Theme, color: boolean, left: string, right: string): string {
