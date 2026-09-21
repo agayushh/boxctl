@@ -44,6 +44,7 @@ export function fitScale(
   maxW: number,
   maxH: number,
 ): Scale {
+  if (boardW * 6 + 2 <= maxW && boardH * 3 + 2 <= maxH) return { w: 6, h: 3 };
   if (boardW * 4 + 2 <= maxW && boardH * 2 + 2 <= maxH) return { w: 4, h: 2 };
   return { w: 2, h: 1 };
 }
@@ -474,8 +475,9 @@ function sprite(
   x: number,
   y: number,
 ): string[] {
-  if (scale.w === 2 && scale.h === 1) return compactTile(kind, theme, color);
-  return warehouseTile(kind, theme, color, x, y);
+  if (scale.h === 1) return compactTile(kind, theme, color);
+  if (scale.w >= 6 && scale.h >= 3) return mediumTile(kind, theme, color, x, y);
+  return smallTile(kind, theme, color, x, y);
 }
 
 function compactTile(kind: CellKind, theme: Theme, color: boolean): string[] {
@@ -500,7 +502,16 @@ function compactTile(kind: CellKind, theme: Theme, color: boolean): string[] {
   return [paint(glyph, { fg: theme.colors[kind], bg, enabled: color })];
 }
 
-function warehouseTile(
+function cellRows(
+  rows: string[],
+  fgcode: number,
+  bg: number,
+  color: boolean,
+): string[] {
+  return rows.map((row) => paint(row, { fg: fgcode, bg, enabled: color }));
+}
+
+function smallTile(
   kind: CellKind,
   theme: Theme,
   color: boolean,
@@ -512,30 +523,62 @@ function warehouseTile(
   const mortar = theme.muted;
   const ink = 16;
   const crate = kind === "box-on-goal" ? theme.colors["box-on-goal"] : theme.colors.box;
-  const fill = (text: string, fgcode: number, bg: number) =>
-    paint(text, { fg: fgcode, bg, enabled: color });
 
   if (kind === "void") {
     const bg = theme.bg ?? 16;
-    return [fill("    ", bg, bg), fill("    ", bg, bg)];
+    return cellRows(["    ", "    "], bg, bg, color);
   }
   if (kind === "wall") {
-    const a = (x + y) % 2 === 0;
-    return a
-      ? [fill("▀█▀█", brick, mortar), fill("█▀█▀", brick, mortar)]
-      : [fill("█▀█▀", brick, mortar), fill("▀█▀█", brick, mortar)];
+    return (x + y) % 2 === 0
+      ? cellRows(["▀█▀█", "█▀█▀"], brick, mortar, color)
+      : cellRows(["█▀█▀", "▀█▀█"], brick, mortar, color);
   }
   if (kind === "box" || kind === "box-on-goal") {
-    return [fill("┌──┐", ink, crate), fill("│><│", ink, crate)];
+    return cellRows(["┌──┐", "│><│"], ink, crate, color);
   }
   if (kind === "player" || kind === "player-on-goal") {
     const bg = kind === "player-on-goal" ? theme.colors.goal : floor;
-    return [fill(" o  ", theme.colors.player, bg), fill("/|\\ ", theme.colors.player, bg)];
+    return cellRows([" o  ", "/|\\ "], theme.colors.player, bg, color);
   }
   if (kind === "goal") {
-    return [fill("    ", theme.colors.goal, floor), fill(" ●  ", theme.colors.goal, floor)];
+    return cellRows(["    ", " ●  "], theme.colors.goal, floor, color);
   }
-  return [fill("    ", floor, floor), fill("    ", floor, floor)];
+  return cellRows(["    ", "    "], floor, floor, color);
+}
+
+function mediumTile(
+  kind: CellKind,
+  theme: Theme,
+  color: boolean,
+  x: number,
+  y: number,
+): string[] {
+  const floor = theme.floorBg;
+  const brick = theme.colors.wall;
+  const mortar = theme.muted;
+  const ink = 16;
+  const crate = kind === "box-on-goal" ? theme.colors["box-on-goal"] : theme.colors.box;
+
+  if (kind === "void") {
+    const bg = theme.bg ?? 16;
+    return cellRows(["      ", "      ", "      "], bg, bg, color);
+  }
+  if (kind === "wall") {
+    return (x + y) % 2 === 0
+      ? cellRows(["▀█▀█▀█", "█▀█▀█▀", "▀█▀█▀█"], brick, mortar, color)
+      : cellRows(["█▀█▀█▀", "▀█▀█▀█", "█▀█▀█▀"], brick, mortar, color);
+  }
+  if (kind === "box" || kind === "box-on-goal") {
+    return cellRows(["┌────┐", "│ \\/ │", "│ /\\ │"], ink, crate, color);
+  }
+  if (kind === "player" || kind === "player-on-goal") {
+    const bg = kind === "player-on-goal" ? theme.colors.goal : floor;
+    return cellRows(["  o   ", " /|\\  ", "      "], theme.colors.player, bg, color);
+  }
+  if (kind === "goal") {
+    return cellRows(["      ", "  ●   ", "      "], theme.colors.goal, floor, color);
+  }
+  return cellRows(["      ", "      ", "      "], floor, floor, color);
 }
 
 function quietStage(
