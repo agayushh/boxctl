@@ -28,60 +28,49 @@ export type Theme = {
   floorBg: number;
 };
 
-const ascii: Record<CellKind, string> = {
+const TILES: Record<CellKind, string> = {
   void: "  ",
   wall: "##",
   floor: "  ",
   goal: "..",
   box: "[]",
-  "box-on-goal": "{}",
+  "box-on-goal": "<>",
   player: "@ ",
   "player-on-goal": "@.",
-};
-
-const blocks: Record<CellKind, string> = {
-  void: "  ",
-  wall: "██",
-  floor: "  ",
-  goal: "··",
-  box: "▓▓",
-  "box-on-goal": "◆◆",
-  player: "▲ ",
-  "player-on-goal": "▲·",
 };
 
 export const THEMES: Theme[] = [
   {
     id: "classic",
-    name: "Classic",
-    tagline: "The original ASCII look",
-    glyphs: ascii,
+    name: "Warehouse",
+    tagline: "Bricks, crates, and a stick figure",
+    glyphs: TILES,
     colors: {
-      void: 0,
-      wall: 245,
-      floor: 240,
-      goal: 220,
-      box: 208,
-      "box-on-goal": 82,
-      player: 51,
-      "player-on-goal": 51,
+      void: 16,
+      wall: 180,
+      floor: 223,
+      goal: 131,
+      box: 214,
+      "box-on-goal": 172,
+      player: 16,
+      "player-on-goal": 16,
     },
-    frame: 245,
-    title: 231,
-    text: 252,
-    muted: 244,
-    accent: 220,
-    ok: 82,
+    frame: 137,
+    title: 223,
+    text: 187,
+    muted: 144,
+    accent: 172,
+    ok: 150,
     warn: 208,
-    bg: 232,
-    barBg: 236,
-    floorBg: 234,
+    bg: 16,
+    barBg: 16,
+    floorBg: 223,
   },
   {
     id: "dungeon",
     name: "Dungeon",
     tagline: "Torchlight and stone",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 94,
@@ -107,7 +96,7 @@ export const THEMES: Theme[] = [
     id: "neon",
     name: "Neon",
     tagline: "Night city warehouse",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 54,
@@ -133,7 +122,7 @@ export const THEMES: Theme[] = [
     id: "forest",
     name: "Forest",
     tagline: "Moss, crates, and clearings",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 22,
@@ -159,7 +148,7 @@ export const THEMES: Theme[] = [
     id: "ice",
     name: "Ice",
     tagline: "Cold storage",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 67,
@@ -185,7 +174,7 @@ export const THEMES: Theme[] = [
     id: "retro",
     name: "Retro",
     tagline: "Green phosphor terminal",
-    glyphs: ascii,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 34,
@@ -211,7 +200,7 @@ export const THEMES: Theme[] = [
     id: "midnight",
     name: "Midnight",
     tagline: "Quiet blue warehouse",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 24,
@@ -237,7 +226,7 @@ export const THEMES: Theme[] = [
     id: "sakura",
     name: "Sakura",
     tagline: "Pink crates at dusk",
-    glyphs: blocks,
+    glyphs: TILES,
     colors: {
       void: 0,
       wall: 95,
@@ -265,4 +254,4 @@ export function themeById(id: string): Theme {
   return THEMES.find((theme) => theme.id === id) ?? THEMES[0]!;
 }
 
-export const DEFAULT_THEME: ThemeId = "dungeon";
+export const DEFAULT_THEME: ThemeId = "classic";
