@@ -4,7 +4,8 @@
   "description": "A terminal Sokoban game: 50 puzzles, multiple themes, and local high scores.",
   "type": "module",
   "bin": {
-    "sokoban": "dist/cli.js"
+    "sokoban": "dist/cli.js",
+    "sokoban-tui": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,7 +17,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
@@ -38,6 +40,15 @@
     "cli"
   ],
   "license": "MIT",
+  "author": "agayushh <agayush088@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agayushh/heuristic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/agayushh/heuristic/issues"
+  },
+  "homepage": "https://github.com/agayushh/heuristic#readme",
   "devDependencies": {
     "@types/node": "^24.13.3",
     "tsx": "^4.20.5",
