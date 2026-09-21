@@ -6,7 +6,7 @@ import { formatTime, loadSave, playerStats } from "./scores/store.js";
 import { runApp } from "./tui/app.js";
 import { THEMES } from "./tui/themes.js";
 
-const HELP = `boxctl — terminal crate-pushing
+const HELP = `boxctl - terminal crate-pushing
 
 Usage:
   boxctl                 start the game

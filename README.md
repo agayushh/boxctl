@@ -1,6 +1,6 @@
 # boxctl
 
-A terminal crate-pushing game. Fifty small, solvable puzzles, eight colour themes, and local high scores — no graphics, just a keyboard.
+A terminal crate-pushing game. Fifty small, solvable puzzles, eight colour themes, and local high scores. No graphics, just a keyboard.
 
 Anyone with Node 18+ can play:
 
@@ -52,7 +52,7 @@ npm run build
 
 The first version ships the first 50 puzzles from **Microban** (April 2000) by David W. Skinner. They were written as a beginner set: small, distinct, and surprisingly sharp. Skinner released the collection for use in Sokoban programs.
 
-A built-in solver has a path for every map (`boxctl --verify`). None of the fifty are dead ends. A few are expert-length (6, 8, 16, 35, 36) — skip them and come back.
+A built-in solver has a path for every map (`boxctl --verify`). None of the fifty are dead ends. A few are expert-length (6, 8, 16, 35, 36). Skip them and come back.
 
 ## License
 
