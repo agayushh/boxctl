@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { parseLevel } from "./engine/parse.js";
+import { solve } from "./engine/solver.js";
 import { LEVELS } from "./levels/campaign.js";
 import { formatTime, loadSave, playerStats } from "./scores/store.js";
 import { runApp } from "./tui/app.js";
@@ -12,6 +14,7 @@ Usage:
   sokoban --theme neon    start with a theme
   sokoban --scores        print high scores
   sokoban --list          list the 50 levels
+  sokoban --verify        solve every campaign map
   sokoban --help          show this help
 
 Themes: ${THEMES.map((theme) => theme.id).join(", ")}
@@ -22,6 +25,7 @@ function main(argv: string[]): void {
   let theme: string | undefined;
   let scores = false;
   let list = false;
+  let verify = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!;
@@ -35,6 +39,10 @@ function main(argv: string[]): void {
     }
     if (arg === "--list") {
       list = true;
+      continue;
+    }
+    if (arg === "--verify") {
+      verify = true;
       continue;
     }
     if (arg === "--level" || arg.startsWith("--level=")) {
@@ -72,6 +80,11 @@ function main(argv: string[]): void {
     return;
   }
 
+  if (verify) {
+    verifyCampaign();
+    return;
+  }
+
   if (scores) {
     printScores();
     return;
@@ -81,6 +94,30 @@ function main(argv: string[]): void {
   if (startLevel !== undefined) appOptions.startLevel = startLevel;
   if (theme !== undefined) appOptions.theme = theme;
   runApp(appOptions);
+}
+
+function verifyCampaign(): void {
+  let failed = 0;
+  for (const level of LEVELS) {
+    const parsed = parseLevel(level.map);
+    const solution = solve(parsed, 250_000);
+    if (!solution) {
+      failed += 1;
+      process.stdout.write(
+        `${String(level.id).padStart(2, "0")}  FAIL  ${level.name}\n`,
+      );
+      continue;
+    }
+    process.stdout.write(
+      `${String(level.id).padStart(2, "0")}  ok    ${String(solution.moves).padStart(3)} moves  ${String(solution.pushes).padStart(2)} pushes  ${level.name}\n`,
+    );
+  }
+  if (failed > 0) {
+    process.stderr.write(`${failed} unsolved maps.\n`);
+    process.exitCode = 1;
+    return;
+  }
+  process.stdout.write("50/50 solvable\n");
 }
 
 function printScores(): void {
