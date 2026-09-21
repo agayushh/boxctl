@@ -243,7 +243,7 @@ export function renderLevels(options: {
     ? `best ${record.bestMoves} moves · ${record.bestPushes} pushes · ${starBar(record.bestStars)} · ${record.completions} clears`
     : isUnlocked(player, current.id)
       ? "not yet cleared"
-      : "locked — clear the previous level first";
+      : "not yet cleared";
 
   const left = [
     "",

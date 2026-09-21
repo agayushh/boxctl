@@ -133,10 +133,8 @@ export function recordCompletion(
   return { record: prev, newBest };
 }
 
-export function isUnlocked(player: PlayerSave | null, levelId: number): boolean {
-  if (levelId <= 1) return true;
-  if (!player) return false;
-  return (player.levels[String(levelId - 1)]?.completions ?? 0) > 0;
+export function isUnlocked(_player: PlayerSave | null, levelId: number): boolean {
+  return levelId >= 1;
 }
 
 export function completedCount(player: PlayerSave | null): number {

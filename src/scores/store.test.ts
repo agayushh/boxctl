@@ -36,7 +36,10 @@ describe("scores", () => {
     expect(stats.avgBestMoves).toBe(12);
     expect(stats.avgAllMoves).toBe(16);
     expect(isUnlocked(player, 2)).toBe(true);
-    expect(isUnlocked(player, 3)).toBe(false);
+    expect(isUnlocked(player, 3)).toBe(true);
+    expect(isUnlocked(null, 1)).toBe(true);
+    expect(isUnlocked(null, 50)).toBe(true);
+    expect(isUnlocked(player, 0)).toBe(false);
   });
 
   it("awards stars from par", () => {
