@@ -8,45 +8,49 @@ import { themeById } from "./themes.js";
 import { stripAnsi } from "./ansi.js";
 
 describe("board render", () => {
-  it("draws level 44 as classic ASCII at 2×1", () => {
-    const level = LEVELS[43]!;
-    const parsed = parseLevel(level.map);
-    const lines = renderBoard(parsed.board, parsed.state, themeById("classic"), false);
+  it("draws a compact 2×1 warehouse tile", () => {
+    const parsed = parseLevel(LEVELS[43]!.map);
+    const lines = renderBoard(
+      parsed.board,
+      parsed.state,
+      themeById("classic"),
+      false,
+      { w: 2, h: 1 },
+    );
     expect(lines.map((line) => stripAnsi(line))).toEqual([
-      "##########",
-      "##@ []..##",
-      "##########",
+      "██████████",
+      "██o []● ██",
+      "██████████",
     ]);
   });
 
-  it("scales a board to fill the stage", () => {
-    const scale = fitScale(5, 3, 40, 12);
-    expect(scale.h).toBeGreaterThan(1);
-    expect(scale.w).toBe(scale.h * 2);
-    const parsed = parseLevel(LEVELS[43]!.map);
-    const lines = renderBoard(parsed.board, parsed.state, themeById("classic"), false, scale);
-    expect(lines).toHaveLength(3 * scale.h);
-    expect(stripAnsi(lines[0]!).length).toBe(5 * scale.w);
+  it("uses 4×2 tiles when there is room, never more", () => {
+    expect(fitScale(5, 3, 40, 12)).toEqual({ w: 4, h: 2 });
+    expect(fitScale(5, 3, 200, 80)).toEqual({ w: 4, h: 2 });
+    expect(fitScale(20, 16, 30, 18)).toEqual({ w: 2, h: 1 });
   });
 });
 
 describe("play layout", () => {
-  it("fills the terminal", () => {
+  it("paints a crate, a goal, and a stick figure", () => {
     const session = new Session(LEVELS[1]!);
-    const save = emptySave();
-    const player = upsertPlayer(save, "Ada");
+    const player = upsertPlayer(emptySave(), "Ada");
     const frame = renderPlay({
       cols: 80,
       rows: 24,
-      theme: themeById("dungeon"),
+      theme: themeById("classic"),
       color: false,
       session,
       player,
       win: false,
       newBest: false,
     });
+    const plain = stripAnsi(frame);
     expect(frame.split("\n")).toHaveLength(24);
-    expect(stripAnsi(frame)).toContain("Nested Goals");
-    expect(stripAnsi(frame)).toContain("MOVES");
+    expect(plain).toContain("Nested Goals");
+    expect(plain).toContain("┌──┐");
+    expect(plain).toContain("●");
+    expect(plain).toContain("o");
+    expect(plain).toContain("/|\\");
   });
 });
