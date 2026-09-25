@@ -19,8 +19,23 @@ npm install -g boxctl
 boxctl
 ```
 
+## Promo
+
+[`promo/boxctl-promo-web.mp4`](promo/boxctl-promo-web.mp4) is a 15 second, 1080p60 reel. Picture and sound are generated in `promo/`: cairo draws the frames, Pillow sets the type, and `audio.py` synthesizes a 120 BPM score so the cuts land on the beat.
+
+Rebuild it with Python 3, cairo, Pillow, numpy, scipy, ffmpeg, and the Ubuntu Sans and Ubuntu Mono fonts:
+
+```bash
+cd promo
+python3 audio.py
+python3 render.py
+```
+
+`render.py` writes the near-lossless `boxctl-promo.mp4`. `python3 render.py --stills 4.6,14.9` dumps preview frames instead.
+
 ## Contents
 
+- [Promo](#promo)
 - [Play Sokoban in the terminal](#play-sokoban-in-the-terminal)
 - [How to play](#how-to-play)
 - [Commands](#commands)

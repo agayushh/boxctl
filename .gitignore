@@ -5,3 +5,9 @@ coverage
 .DS_Store
 .env
 *.local
+
+promo/stills/
+promo/qa/
+promo/**/__pycache__/
+promo/boxctl-promo.mp4
+promo/promo.wav
